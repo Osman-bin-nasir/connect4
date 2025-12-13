@@ -10,6 +10,7 @@ function App() {
   const [role, setRole] = useState(null); // 'player' or 'crowd'
   const [votes, setVotes] = useState({});
   const [timer, setTimer] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(30); // Default 30s
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
@@ -50,7 +51,7 @@ function App() {
 
   const createGame = async () => {
     try {
-      const res = await axios.post('http://localhost:3001/api/games');
+      const res = await axios.post('http://localhost:3001/api/games', { turnDuration: selectedTime });
       const newGame = res.data;
       await joinGame(newGame._id, 'player');
     } catch (err) {
@@ -82,6 +83,12 @@ function App() {
     }
   };
 
+  const handleForceMove = () => {
+    if (game && role === 'player') {
+      socket.emit('force_crowd_move', { gameId: game._id, userId });
+    }
+  };
+
   if (!game) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center font-sans">
@@ -89,6 +96,18 @@ function App() {
           1 vs The Crowd
         </h1>
         <div className="flex flex-col gap-6 items-center">
+          <div className="flex gap-4 mb-4">
+            {[10, 30, 60, 0].map(time => (
+              <button
+                key={time}
+                onClick={() => setSelectedTime(time)}
+                className={`px-4 py-2 rounded-lg font-bold transition-colors ${selectedTime === time ? 'bg-green-500 text-black' : 'bg-gray-700 text-gray-300'}`}
+              >
+                {time === 0 ? 'Infinite' : `${time}s`}
+              </button>
+            ))}
+          </div>
+
           <button
             onClick={createGame}
             className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 rounded-xl font-bold text-xl shadow-lg hover:scale-105 transition-transform"
@@ -136,8 +155,18 @@ function App() {
       </div>
 
       {timer !== null && game.currentTurn === 'crowd' && game.status !== 'completed' && (
-        <div className="text-3xl font-mono text-yellow-400 mb-6 bg-gray-800 px-4 py-2 rounded-lg border border-yellow-500/30">
-          Time Left: {timer}s
+        <div className="text-3xl font-mono text-yellow-400 mb-6 bg-gray-800 px-4 py-2 rounded-lg border border-yellow-500/30 flex flex-col items-center gap-2">
+          <span>
+            {timer === 'infinite' ? '∞ Infinite Time' : `Time Left: ${timer}s`}
+          </span>
+          {timer === 'infinite' && role === 'player' && (
+            <button
+              onClick={handleForceMove}
+              className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500 transition-colors"
+            >
+              End Voting & Move
+            </button>
+          )}
         </div>
       )}
 

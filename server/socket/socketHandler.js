@@ -64,22 +64,51 @@ module.exports = (io) => {
             io.to(gameId).emit('vote_update', gameVotes[gameId]);
         });
 
+        socket.on('force_crowd_move', async ({ gameId, userId }) => {
+            try {
+                const game = await Game.findById(gameId);
+                // Security: only the single player can force move
+                if (!game || game.singlePlayerId.toString() !== userId) return;
+
+                // Only if it's currently crowd's turn (and maybe strictly if infinite time, but generally safe to allow 'finalize now')
+                if (game.currentTurn === 'crowd') {
+                    if (gameTimers[gameId]) {
+                        clearInterval(gameTimers[gameId]);
+                        delete gameTimers[gameId];
+                    }
+                    resolveCrowdTurn(io, gameId);
+                }
+            } catch (err) {
+                console.error("Force move error", err);
+            }
+        });
+
         socket.on('disconnect', () => {
             console.log('User disconnected:', socket.id);
         });
     });
 };
 
-function startCrowdTimer(io, gameId) {
+async function startCrowdTimer(io, gameId) {
     if (gameTimers[gameId]) clearInterval(gameTimers[gameId]);
 
-    let timeLeft = 10; // 10 seconds
-    io.to(gameId).emit('timer_sync', timeLeft);
+    const game = await Game.findById(gameId);
+    if (!game) return;
+
+    let timeLeft = game.turnDuration; // Use game configured duration
 
     // Reset votes
     gameVotes[gameId] = {};
     for (let i = 0; i < 7; i++) gameVotes[gameId][i] = 0;
     io.to(gameId).emit('vote_update', gameVotes[gameId]);
+
+    // specific check for infinite time
+    if (timeLeft === 0) {
+        io.to(gameId).emit('timer_sync', 'infinite'); // or 0 or null, string might be clearer for client
+        return;
+    }
+
+    io.to(gameId).emit('timer_sync', timeLeft);
 
     const interval = setInterval(() => {
         timeLeft--;

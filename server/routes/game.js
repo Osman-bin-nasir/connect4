@@ -6,7 +6,10 @@ const User = require('../models/User');
 // Create a new game
 router.post('/', async (req, res) => {
     try {
-        const game = new Game();
+        const { turnDuration } = req.body;
+        // fallback to 30 only if undefined, allowing 0
+        const duration = (turnDuration !== undefined && turnDuration !== null) ? turnDuration : 30;
+        const game = new Game({ turnDuration: duration });
         await game.save();
         res.status(201).json(game);
     } catch (err) {
