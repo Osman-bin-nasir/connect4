@@ -3,10 +3,10 @@ import Cell from './Cell';
 
 const Board = ({ board, onColumnClick, votes }) => {
     return (
-        <div className="bg-blue-800 p-4 rounded-xl shadow-2xl border-4 border-blue-900 inline-block">
-            <div className="flex flex-col gap-2">
+        <div className="bg-blue-800 p-2 md:p-4 rounded-xl shadow-2xl border-2 md:border-4 border-blue-900 inline-block max-w-[95vw]">
+            <div className="flex flex-col gap-1 md:gap-2">
                 {board.map((row, rIndex) => (
-                    <div key={rIndex} className="flex gap-2">
+                    <div key={rIndex} className="flex gap-1 md:gap-2">
                         {row.map((cell, cIndex) => (
                             <Cell
                                 key={`${rIndex}-${cIndex}`}

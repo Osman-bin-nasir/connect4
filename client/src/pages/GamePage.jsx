@@ -107,8 +107,8 @@ function GamePage() {
                 </button>
             </div>
 
-            <div className="mb-8 text-center">
-                <h1 className="text-4xl font-bold mb-2">
+            <div className="mb-8 text-center px-4">
+                <h1 className="text-2xl md:text-4xl font-bold mb-2">
                     {game.status === 'completed'
                         ? <span className="text-green-400">Winner: {game.winner === 'player' ? 'The One' : 'The Crowd'}</span>
                         : <span className={game.currentTurn === 'player' ? 'text-red-500' : 'text-yellow-500'}>

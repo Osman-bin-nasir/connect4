@@ -131,10 +131,10 @@ function Dashboard() {
                 {/* Header */}
                 <div className="flex justify-between items-center mb-12">
                     <div>
-                        <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-yellow-500">
+                        <h1 className="text-3xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-yellow-500">
                             Dashboard
                         </h1>
-                        <p className="text-gray-400 mt-2">Welcome back, {username}!</p>
+                        <p className="text-gray-400 mt-2 text-sm md:text-base">Welcome back, {username}!</p>
                     </div>
                     <button
                         onClick={handleLogout}

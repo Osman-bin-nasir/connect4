@@ -8,10 +8,10 @@ const Cell = ({ value, onClick }) => {
 
     return (
         <div
-            className="w-12 h-12 bg-blue-700 flex items-center justify-center cursor-pointer"
+            className="w-8 h-8 md:w-12 md:h-12 bg-blue-700 flex items-center justify-center cursor-pointer"
             onClick={onClick}
         >
-            <div className={`w-10 h-10 rounded-full ${color} transition-all duration-300 shadow-inner`}></div>
+            <div className={`w-6 h-6 md:w-10 md:h-10 rounded-full ${color} transition-all duration-300 shadow-inner`}></div>
         </div>
     );
 };

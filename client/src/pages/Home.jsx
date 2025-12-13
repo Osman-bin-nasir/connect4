@@ -21,8 +21,8 @@ function Home() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center font-sans">
-            <h1 className="text-5xl font-extrabold mb-12 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-yellow-500">
+        <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center font-sans px-4">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-12 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-yellow-500 text-center">
                 1 vs The Crowd
             </h1>
             <div className="flex flex-col gap-6 items-center">
