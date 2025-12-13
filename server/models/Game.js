@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const gameSchema = new mongoose.Schema({
+    name: { type: String, default: 'Untitled Game' },
     status: { type: String, enum: ['waiting', 'active', 'completed'], default: 'waiting' },
     singlePlayerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     crowdId: { type: String, default: 'crowd' },

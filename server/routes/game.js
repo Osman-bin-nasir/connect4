@@ -6,10 +6,15 @@ const User = require('../models/User');
 // Create a new game
 router.post('/', async (req, res) => {
     try {
-        const { turnDuration } = req.body;
+        const { turnDuration, name, userId } = req.body;
         // fallback to 30 only if undefined, allowing 0
         const duration = (turnDuration !== undefined && turnDuration !== null) ? turnDuration : 30;
-        const game = new Game({ turnDuration: duration });
+        const game = new Game({
+            turnDuration: duration,
+            name: name || 'Untitled Game',
+            singlePlayerId: userId || null,
+            status: userId ? 'active' : 'waiting'
+        });
         await game.save();
         res.status(201).json(game);
     } catch (err) {
@@ -46,6 +51,60 @@ router.post('/:id/join', async (req, res) => {
         // Crowd doesn't need to strictly "join" the DB model, they just connect via socket
 
         res.json(game);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get all games for a user
+router.get('/user/:userId', async (req, res) => {
+    try {
+        const games = await Game.find({ singlePlayerId: req.params.userId }).sort({ createdAt: -1 });
+        res.json(games);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Rename game
+router.put('/:id', async (req, res) => {
+    try {
+        const { name, userId } = req.body;
+        const game = await Game.findById(req.params.id);
+
+        if (!game) return res.status(404).json({ error: 'Game not found' });
+
+        // Check ownership
+        if (game.singlePlayerId.toString() !== userId) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        game.name = name;
+        game.updatedAt = Date.now();
+        await game.save();
+
+        res.json(game);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete game
+router.delete('/:id', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const game = await Game.findById(req.params.id);
+
+        if (!game) return res.status(404).json({ error: 'Game not found' });
+
+        // Check ownership
+        if (game.singlePlayerId.toString() !== userId) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        await Game.findByIdAndDelete(req.params.id);
+
+        res.json({ message: 'Game deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

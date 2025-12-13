@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const userRoutes = require('./routes/user');
 const gameRoutes = require('./routes/game');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,6 +27,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/connect4cro
     .catch(err => console.log(err));
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
 
