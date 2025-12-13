@@ -4,6 +4,7 @@ const { checkWin, checkDraw, makeMove } = require('../utils/gameLogic');
 // In-memory storage
 const gameVotes = {}; // { gameId: { col0: 5, col1: 2 } }
 const gameTimers = {}; // { gameId: intervalId }
+const gameVoters = {}; // { gameId: Set([socketId1, socketId2, ...]) } - track who voted this turn
 
 module.exports = (io) => {
     io.on('connection', (socket) => {
@@ -54,13 +55,28 @@ module.exports = (io) => {
         });
 
         socket.on('cast_vote', ({ gameId, col }) => {
+            console.log(`Vote received: gameId=${gameId}, col=${col}, socketId=${socket.id}`);
+
+            // Initialize vote tracking structures if needed
             if (!gameVotes[gameId]) gameVotes[gameId] = {};
-            // Initialize if needed
+            if (!gameVoters[gameId]) gameVoters[gameId] = new Set();
+
+            // Check if this socket has already voted this turn
+            if (gameVoters[gameId].has(socket.id)) {
+                console.log(`Vote rejected: ${socket.id} already voted this turn`);
+                return;
+            }
+
+            // Initialize vote counts if needed
             for (let i = 0; i < 7; i++) {
                 if (!gameVotes[gameId][i]) gameVotes[gameId][i] = 0;
             }
 
+            // Record vote and mark user as voted
             gameVotes[gameId][col]++;
+            gameVoters[gameId].add(socket.id);
+            console.log(`Vote accepted: ${socket.id} voted for col ${col}. Total votes:`, gameVotes[gameId]);
+
             io.to(gameId).emit('vote_update', gameVotes[gameId]);
         });
 
@@ -97,8 +113,9 @@ async function startCrowdTimer(io, gameId) {
 
     let timeLeft = game.turnDuration; // Use game configured duration
 
-    // Reset votes
+    // Reset votes and voters for new turn
     gameVotes[gameId] = {};
+    gameVoters[gameId] = new Set(); // Clear voter tracking
     for (let i = 0; i < 7; i++) gameVotes[gameId][i] = 0;
     io.to(gameId).emit('vote_update', gameVotes[gameId]);
 
@@ -185,6 +202,11 @@ async function resolveCrowdTurn(io, gameId) {
             await game.save();
             io.to(gameId).emit('game_state', game);
             io.to(gameId).emit('last_crowd_move', { col: selectedCol });
+        }
+
+        // Clear voters after turn completes
+        if (gameVoters[gameId]) {
+            delete gameVoters[gameId];
         }
     } catch (err) {
         console.error("Error resolving crowd turn:", err);

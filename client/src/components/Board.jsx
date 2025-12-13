@@ -20,9 +20,9 @@ const Board = ({ board, onColumnClick, votes }) => {
 
             {/* Vote counts (if crowd) */}
             {votes && (
-                <div className="flex gap-2 mt-2 justify-between px-2">
+                <div className="flex gap-1 md:gap-2 mt-2 justify-center">
                     {Array(7).fill(0).map((_, i) => (
-                        <div key={i} className="w-12 text-center text-white font-bold text-sm bg-black/30 rounded py-1">
+                        <div key={i} className="w-8 md:w-12 text-center text-white font-bold text-xs md:text-sm bg-black/30 rounded py-1">
                             {votes[i] || 0}
                         </div>
                     ))}
