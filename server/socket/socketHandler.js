@@ -19,7 +19,11 @@ module.exports = (io) => {
                 socket.emit('game_state', game);
                 // If crowd turn, send current timer/votes?
                 if (game.currentTurn === 'crowd' && gameVotes[gameId]) {
-                    socket.emit('vote_update', gameVotes[gameId]);
+                    const count = gameVoters[gameId] ? gameVoters[gameId].size : 0;
+                    socket.emit('vote_update', {
+                        votes: gameVotes[gameId],
+                        voterCount: count
+                    });
                 }
             }
         });
@@ -54,16 +58,15 @@ module.exports = (io) => {
             }
         });
 
-        socket.on('cast_vote', ({ gameId, col }) => {
-            console.log(`Vote received: gameId=${gameId}, col=${col}, socketId=${socket.id}`);
+        socket.on('cast_vote', ({ gameId, col, crowdUserId }) => {
+            const voterId = crowdUserId || socket.id; // Fallback to socket.id if not provided
 
             // Initialize vote tracking structures if needed
             if (!gameVotes[gameId]) gameVotes[gameId] = {};
             if (!gameVoters[gameId]) gameVoters[gameId] = new Set();
 
-            // Check if this socket has already voted this turn
-            if (gameVoters[gameId].has(socket.id)) {
-                console.log(`Vote rejected: ${socket.id} already voted this turn`);
+            // Check if this user has already voted this turn
+            if (gameVoters[gameId].has(voterId)) {
                 return;
             }
 
@@ -74,10 +77,12 @@ module.exports = (io) => {
 
             // Record vote and mark user as voted
             gameVotes[gameId][col]++;
-            gameVoters[gameId].add(socket.id);
-            console.log(`Vote accepted: ${socket.id} voted for col ${col}. Total votes:`, gameVotes[gameId]);
+            gameVoters[gameId].add(voterId);
 
-            io.to(gameId).emit('vote_update', gameVotes[gameId]);
+            io.to(gameId).emit('vote_update', {
+                votes: gameVotes[gameId],
+                voterCount: gameVoters[gameId].size
+            });
         });
 
         socket.on('force_crowd_move', async ({ gameId, userId }) => {
@@ -117,7 +122,7 @@ async function startCrowdTimer(io, gameId) {
     gameVotes[gameId] = {};
     gameVoters[gameId] = new Set(); // Clear voter tracking
     for (let i = 0; i < 7; i++) gameVotes[gameId][i] = 0;
-    io.to(gameId).emit('vote_update', gameVotes[gameId]);
+    io.to(gameId).emit('vote_update', { votes: gameVotes[gameId], voterCount: 0 });
 
     // specific check for infinite time
     if (timeLeft === 0) {

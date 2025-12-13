@@ -5,6 +5,8 @@ import Board from '../components/Board';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+import { v4 as uuidv4 } from 'uuid';
+
 const socket = io('http://localhost:3001');
 
 function GamePage() {
@@ -13,12 +15,22 @@ function GamePage() {
     const [game, setGame] = useState(null);
     const [role, setRole] = useState(null);
     const [votes, setVotes] = useState({});
+    const [uniqueVoters, setUniqueVoters] = useState(0);
     const [timer, setTimer] = useState(null);
     const [userId, setUserId] = useState(null);
+    const [crowdUserId, setCrowdUserId] = useState(null);
 
     useEffect(() => {
         const id = localStorage.getItem('userId');
         setUserId(id);
+
+        // Persistent Crowd ID (for anti-spam)
+        let cId = localStorage.getItem('crowdUserId');
+        if (!cId) {
+            cId = uuidv4();
+            localStorage.setItem('crowdUserId', cId);
+        }
+        setCrowdUserId(cId);
 
         // If we have a gameId from URL, join it
         if (gameId) {
@@ -30,7 +42,13 @@ function GamePage() {
         });
 
         socket.on('vote_update', (data) => {
-            setVotes(data);
+            // data can be just votes object OR { votes, voterCount }
+            if (data.votes) {
+                setVotes(data.votes);
+                setUniqueVoters(data.voterCount || 0);
+            } else {
+                setVotes(data);
+            }
         });
 
         socket.on('timer_sync', (time) => {
@@ -73,7 +91,7 @@ function GamePage() {
         if (role === 'player' && game.currentTurn === 'player') {
             socket.emit('make_move', { gameId: game._id, col, userId });
         } else if (role === 'crowd' && game.currentTurn === 'crowd') {
-            socket.emit('cast_vote', { gameId: game._id, col });
+            socket.emit('cast_vote', { gameId: game._id, col, crowdUserId });
         }
     };
 
@@ -127,6 +145,9 @@ function GamePage() {
                 <div className="text-3xl font-mono text-yellow-400 mb-6 bg-gray-800 px-4 py-2 rounded-lg border border-yellow-500/30 flex flex-col items-center gap-2">
                     <span>
                         {timer === 'infinite' ? '∞ Infinite Time' : `Time Left: ${timer}s`}
+                    </span>
+                    <span className="text-sm text-gray-400 font-sans">
+                        Unique Voters: {uniqueVoters}
                     </span>
                     {timer === 'infinite' && role === 'player' && (
                         <button
