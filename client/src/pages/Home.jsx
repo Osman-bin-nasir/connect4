@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -6,7 +6,13 @@ import toast from 'react-hot-toast';
 function Home() {
     const [selectedTime, setSelectedTime] = useState(30);
     const [gameIdInput, setGameIdInput] = useState('');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        setIsLoggedIn(!!userId);
+    }, []);
 
     const handleJoinAsCrowd = () => {
         if (!gameIdInput.trim()) {
@@ -26,12 +32,21 @@ function Home() {
                 1 vs The Crowd
             </h1>
             <div className="flex flex-col gap-6 items-center">
-                <button
-                    onClick={handleLoginRedirect}
-                    className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 rounded-xl font-bold text-xl shadow-lg hover:scale-105 transition-transform"
-                >
-                    Login to Play as The One
-                </button>
+                {isLoggedIn ? (
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="bg-gradient-to-r from-blue-600 to-blue-500 px-8 py-4 rounded-xl font-bold text-xl shadow-lg hover:scale-105 transition-transform"
+                    >
+                        Go to Dashboard
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleLoginRedirect}
+                        className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 rounded-xl font-bold text-xl shadow-lg hover:scale-105 transition-transform"
+                    >
+                        Login to Play as The One
+                    </button>
+                )}
 
                 <div className="flex gap-2 items-center mt-8 bg-gray-800 p-4 rounded-xl">
                     <input
@@ -49,15 +64,17 @@ function Home() {
                     </button>
                 </div>
 
-                <p className="text-gray-500 mt-4">
-                    Don't have an account?{' '}
-                    <span
-                        onClick={() => navigate('/signup')}
-                        className="text-yellow-500 hover:text-yellow-400 font-semibold cursor-pointer"
-                    >
-                        Sign up
-                    </span>
-                </p>
+                {!isLoggedIn && (
+                    <p className="text-gray-500 mt-4">
+                        Don't have an account?{' '}
+                        <span
+                            onClick={() => navigate('/signup')}
+                            className="text-yellow-500 hover:text-yellow-400 font-semibold cursor-pointer"
+                        >
+                            Sign up
+                        </span>
+                    </p>
+                )}
             </div>
         </div>
     );
