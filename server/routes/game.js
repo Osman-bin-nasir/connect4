@@ -25,7 +25,7 @@ router.post('/', async (req, res) => {
 // Get game state
 router.get('/:id', async (req, res) => {
     try {
-        const game = await Game.findById(req.params.id);
+        const game = await Game.findById(req.params.id).populate('singlePlayerId', 'username');
         if (!game) return res.status(404).json({ error: 'Game not found' });
         res.json(game);
     } catch (err) {

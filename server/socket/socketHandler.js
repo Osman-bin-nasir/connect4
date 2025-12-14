@@ -15,7 +15,7 @@ module.exports = (io) => {
             socket.join(gameId);
             console.log(`User ${socket.id} joined game ${gameId} as ${role}`);
 
-            const game = await Game.findById(gameId);
+            const game = await Game.findById(gameId).populate('singlePlayerId', 'username');
             if (game) {
                 socket.emit('game_state', game);
                 // If crowd turn, send current timer/votes?
@@ -41,7 +41,7 @@ module.exports = (io) => {
 
         socket.on('make_move', async ({ gameId, col, userId }) => {
             try {
-                const game = await Game.findById(gameId);
+                const game = await Game.findById(gameId).populate('singlePlayerId', 'username');
                 if (!game || game.status !== 'active' || game.currentTurn !== 'player') return;
 
                 // Verify user is the single player (optional security check)
@@ -165,7 +165,7 @@ async function startCrowdTimer(io, gameId) {
 
 async function resolveCrowdTurn(io, gameId) {
     try {
-        const game = await Game.findById(gameId);
+        const game = await Game.findById(gameId).populate('singlePlayerId', 'username');
         if (!game || game.status !== 'completed' && game.currentTurn !== 'crowd') {
             // Safety check
         }

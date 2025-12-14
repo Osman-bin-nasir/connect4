@@ -95,7 +95,11 @@ function GamePage() {
             const loadedGame = res.data;
 
             // Determine role: if user is the player, set role as player, otherwise crowd
-            if (loadedGame.singlePlayerId && loadedGame.singlePlayerId.toString() === uId) {
+            // Handle populated singlePlayerId (object) or raw ID
+            const spId = loadedGame.singlePlayerId;
+            const spIdString = (spId && typeof spId === 'object') ? spId._id.toString() : spId?.toString();
+
+            if (spIdString && spIdString === uId) {
                 socket.emit('join_game', { gameId: gId, role: 'player' });
                 setRole('player');
             } else {
@@ -186,6 +190,9 @@ function GamePage() {
 
     const hasHistory = game.moves && game.moves.length > 0;
 
+    const spId = game.singlePlayerId;
+    const playerName = (spId && typeof spId === 'object') ? spId.username : 'The One';
+
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-8 font-sans">
             <div className="mb-4 w-full flex justify-between items-center px-4 max-w-2xl text-gray-400 text-sm">
@@ -204,7 +211,7 @@ function GamePage() {
             <div className="mb-6 flex justify-center gap-6 text-sm">
                 <div className="flex items-center gap-2 bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
                     <div className="w-6 h-6 rounded bg-red-500"></div>
-                    <span className="text-gray-300">The One (Player)</span>
+                    <span className="text-gray-300">{playerName} (Player)</span>
                 </div>
                 <div className="flex items-center gap-2 bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
                     <div className="w-6 h-6 rounded bg-yellow-400"></div>
@@ -270,9 +277,9 @@ function GamePage() {
             <div className="mb-8 text-center px-4">
                 <h1 className="text-2xl md:text-4xl font-bold mb-2">
                     {game.status === 'completed'
-                        ? <span className="text-green-400">Winner: {game.winner === 'player' ? 'The One' : 'The Crowd'}</span>
+                        ? <span className="text-green-400">Winner: {game.winner === 'player' ? playerName : 'The Crowd'}</span>
                         : <span className={game.currentTurn === 'player' ? 'text-red-500' : 'text-yellow-500'}>
-                            Turn: {game.currentTurn === 'player' ? 'The One' : 'The Crowd'}
+                            Turn: {game.currentTurn === 'player' ? playerName : 'The Crowd'}
                         </span>
                     }
                 </h1>

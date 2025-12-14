@@ -252,9 +252,9 @@ function Dashboard() {
 
                                     <div className="space-y-2 text-sm text-gray-400 mb-4">
                                         <p>Status: <span className="capitalize font-semibold">{game.status}</span></p>
-                                        <p>Turn: <span className="font-semibold">{game.currentTurn === 'player' ? 'The One' : 'The Crowd'}</span></p>
+                                        <p>Turn: <span className="font-semibold">{game.currentTurn === 'player' ? username : 'The Crowd'}</span></p>
                                         {game.winner && (
-                                            <p>Winner: <span className="text-green-400 font-semibold">{game.winner === 'player' ? 'The One' : 'The Crowd'}</span></p>
+                                            <p>Winner: <span className="text-green-400 font-semibold">{game.winner === 'player' ? username : 'The Crowd'}</span></p>
                                         )}
                                         <p className="text-xs font-mono bg-gray-900 px-2 py-1 rounded">ID: {game._id}</p>
                                     </div>
