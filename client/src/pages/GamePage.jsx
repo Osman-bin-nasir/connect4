@@ -188,29 +188,16 @@ function GamePage() {
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-8 font-sans">
-            <div className="mb-4 w-full flex justify-between items-center px-4 max-w-2xl">
+            <div className="mb-4 w-full flex justify-between items-center px-4 max-w-2xl text-gray-400 text-sm">
                 <button
                     onClick={() => navigate('/dashboard')}
-                    className="bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                    className="hover:text-white transition-colors flex items-center gap-1"
                 >
-                    ← Back to Dashboard
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                    </svg>
+                    Back to Dashboard
                 </button>
-                {hasHistory && !isReplaying && (
-                    <button
-                        onClick={startReplay}
-                        className="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2"
-                    >
-                        🎬 Replay Game
-                    </button>
-                )}
-                {isReplaying && (
-                    <button
-                        onClick={exitReplay}
-                        className="bg-red-600 px-4 py-2 rounded-lg hover:bg-red-500 transition-colors flex items-center gap-2"
-                    >
-                        🔴 Return to Live
-                    </button>
-                )}
             </div>
 
             {/* Color Legend */}
@@ -225,29 +212,58 @@ function GamePage() {
                 </div>
             </div>
 
-            {/* Replay Controls */}
+            {/* Replay Controls - sleek dark theme */}
             {isReplaying && (
-                <div className="mb-6 bg-gray-800 px-6 py-4 rounded-lg border border-blue-500/50">
-                    <div className="flex items-center justify-center gap-3 mb-2">
-                        <button onClick={goToStart} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-colors" title="Start">⏮</button>
-                        <button onClick={goToPrevious} disabled={replayIndex === 0} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="Previous">⏪</button>
+                <div className="mb-8 bg-gray-800/80 backdrop-blur-md px-8 py-4 rounded-2xl border border-gray-700/50 shadow-xl flex flex-col items-center gap-3 animate-fade-in-up">
+                    <div className="flex items-center gap-6">
+                        <button onClick={goToStart} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all" title="Start">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <button onClick={goToPrevious} disabled={replayIndex === 0} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all disabled:opacity-30 disabled:hover:bg-transparent" title="Previous">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
 
                         <button
                             onClick={toggleAutoPlay}
-                            className={`px-4 py-1 rounded transition-colors flex items-center gap-1 ${isAutoPlaying ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-500'}`}
-                            title={isAutoPlaying ? "Pause Auto-play" : "Start Auto-play"}
+                            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                            title={isAutoPlaying ? "Pause" : "Play"}
                         >
-                            {isAutoPlaying ? '⏸️' : '▶️'}
+                            {isAutoPlaying ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            )}
                         </button>
 
-                        <span className="text-blue-400 font-mono px-3 min-w-[100px] text-center">
-                            Move {replayIndex} / {game.moves.length}
-                        </span>
-
-                        <button onClick={goToNext} disabled={replayIndex === game.moves.length} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="Next">⏩</button>
-                        <button onClick={goToEnd} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-colors" title="End">⏭</button>
+                        <button onClick={goToNext} disabled={replayIndex === game.moves.length} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all disabled:opacity-30 disabled:hover:bg-transparent" title="Next">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                        <button onClick={goToEnd} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all" title="End">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                            </svg>
+                        </button>
                     </div>
-                    <p className="text-xs text-center text-gray-400">Viewing game history • {liveGame && liveGame !== game ? '🔴 Live game updated in background' : ''}</p>
+
+                    {/* Minimalist Progress Bar */}
+                    <div className="w-64 h-1.5 bg-gray-700 rounded-full overflow-hidden mt-1">
+                        <div
+                            className="h-full bg-blue-500 transition-all duration-300 ease-out"
+                            style={{ width: `${(replayIndex / Math.max(1, game.moves.length)) * 100}%` }}
+                        ></div>
+                    </div>
+                    <p className="text-xs font-mono text-gray-400">Move {replayIndex} / {game.moves.length}</p>
                 </div>
             )}
 
@@ -297,6 +313,29 @@ function GamePage() {
                 <p className="text-xs mt-2 font-mono bg-gray-800 px-2 py-1 rounded inline-block">ID: {game._id}</p>
                 <p className="text-sm mt-2 text-gray-400">Game: {game.name}</p>
             </div>
+            {/* Floating Action Buttons */}
+            {hasHistory && !isReplaying && (
+                <div className="fixed bottom-6 right-6 z-50">
+                    <button
+                        onClick={startReplay}
+                        className="group bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30 px-6 py-3 rounded-full font-bold transition-all transform hover:scale-105 flex items-center gap-2"
+                    >
+                        <span>🎬</span>
+                        <span className="group-hover:inline-block">Replay Game</span>
+                    </button>
+                </div>
+            )}
+
+            {isReplaying && (
+                <div className="fixed bottom-6 right-6 z-50">
+                    <button
+                        onClick={exitReplay}
+                        className="group bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/30 px-6 py-3 rounded-full font-bold transition-all transform hover:scale-105 flex items-center gap-2"
+                    >
+                        <span>🔴</span> Return to Live
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
