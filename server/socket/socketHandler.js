@@ -4,6 +4,7 @@ const { checkWin, checkDraw, makeMove } = require('../utils/gameLogic');
 // In-memory storage
 const gameVotes = {}; // { gameId: { col0: 5, col1: 2 } }
 const gameTimers = {}; // { gameId: intervalId }
+const gameTimeLeft = {}; // { gameId: seconds } - track current time for sync
 const gameVoters = {}; // { gameId: Set([socketId1, socketId2, ...]) } - track who voted this turn
 
 module.exports = (io) => {
@@ -18,12 +19,22 @@ module.exports = (io) => {
             if (game) {
                 socket.emit('game_state', game);
                 // If crowd turn, send current timer/votes?
-                if (game.currentTurn === 'crowd' && gameVotes[gameId]) {
-                    const count = gameVoters[gameId] ? gameVoters[gameId].size : 0;
-                    socket.emit('vote_update', {
-                        votes: gameVotes[gameId],
-                        voterCount: count
-                    });
+                if (game.currentTurn === 'crowd') {
+                    // Sync votes
+                    if (gameVotes[gameId]) {
+                        const count = gameVoters[gameId] ? gameVoters[gameId].size : 0;
+                        socket.emit('vote_update', {
+                            votes: gameVotes[gameId],
+                            voterCount: count
+                        });
+                    }
+
+                    // Sync timer
+                    if (game.turnDuration === 0) {
+                        socket.emit('timer_sync', 'infinite');
+                    } else if (gameTimeLeft[gameId] !== undefined) {
+                        socket.emit('timer_sync', gameTimeLeft[gameId]);
+                    }
                 }
             }
         });
@@ -38,6 +49,9 @@ module.exports = (io) => {
 
                 const { success } = makeMove(game.board, col, 1); // 1 = player
                 if (success) {
+                    // Record the move for replay
+                    game.moves.push({ col, player: 'player', timestamp: new Date() });
+
                     const winner = checkWin(game.board);
                     if (winner) {
                         game.winner = 'player';
@@ -96,6 +110,7 @@ module.exports = (io) => {
                     if (gameTimers[gameId]) {
                         clearInterval(gameTimers[gameId]);
                         delete gameTimers[gameId];
+                        delete gameTimeLeft[gameId];
                     }
                     resolveCrowdTurn(io, gameId);
                 }
@@ -131,13 +146,16 @@ async function startCrowdTimer(io, gameId) {
     }
 
     io.to(gameId).emit('timer_sync', timeLeft);
+    gameTimeLeft[gameId] = timeLeft;
 
     const interval = setInterval(() => {
         timeLeft--;
+        gameTimeLeft[gameId] = timeLeft;
         io.to(gameId).emit('timer_sync', timeLeft);
         if (timeLeft <= 0) {
             clearInterval(interval);
             delete gameTimers[gameId];
+            delete gameTimeLeft[gameId];
             resolveCrowdTurn(io, gameId);
         }
     }, 1000);
@@ -193,6 +211,9 @@ async function resolveCrowdTurn(io, gameId) {
         }
 
         if (moveResult.success) {
+            // Record the move for replay
+            game.moves.push({ col: selectedCol, player: 'crowd', timestamp: new Date() });
+
             const winner = checkWin(game.board);
             if (winner) {
                 game.winner = 'crowd';

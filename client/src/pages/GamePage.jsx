@@ -20,6 +20,10 @@ function GamePage() {
     const [timer, setTimer] = useState(null);
     const [userId, setUserId] = useState(null);
     const [crowdUserId, setCrowdUserId] = useState(null);
+    const [isReplaying, setIsReplaying] = useState(false);
+    const [replayIndex, setReplayIndex] = useState(0);
+    const [liveGame, setLiveGame] = useState(null);
+    const [isAutoPlaying, setIsAutoPlaying] = useState(false);
 
     useEffect(() => {
         const id = localStorage.getItem('userId');
@@ -39,7 +43,12 @@ function GamePage() {
         }
 
         socket.on('game_state', (data) => {
-            setGame(data);
+            if (isReplaying) {
+                // Store live updates in background during replay
+                setLiveGame(data);
+            } else {
+                setGame(data);
+            }
         });
 
         socket.on('vote_update', (data) => {
@@ -62,6 +71,23 @@ function GamePage() {
             socket.off('timer_sync');
         };
     }, [gameId]);
+
+    // Auto-play effect
+    useEffect(() => {
+        let interval;
+        if (isAutoPlaying && isReplaying && game && game.moves) {
+            interval = setInterval(() => {
+                setReplayIndex((prev) => {
+                    if (prev >= game.moves.length) {
+                        setIsAutoPlaying(false);
+                        return prev;
+                    }
+                    return prev + 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [isAutoPlaying, isReplaying, game]);
 
     const loadGame = async (gId, uId) => {
         try {
@@ -87,7 +113,7 @@ function GamePage() {
     };
 
     const handleColumnClick = (col) => {
-        if (!game) return;
+        if (!game || isReplaying) return; // Block moves during replay
 
         if (role === 'player' && game.currentTurn === 'player') {
             socket.emit('make_move', { gameId: game._id, col, userId });
@@ -102,6 +128,44 @@ function GamePage() {
         }
     };
 
+    // Replay functions
+    const reconstructBoard = (moves) => {
+        const board = Array(6).fill().map(() => Array(7).fill(0));
+        moves.forEach((move) => {
+            const playerValue = move.player === 'player' ? 1 : 2;
+            // Find lowest empty row in column
+            for (let r = 5; r >= 0; r--) {
+                if (board[r][move.col] === 0) {
+                    board[r][move.col] = playerValue;
+                    break;
+                }
+            }
+        });
+        return board;
+    };
+
+    const startReplay = () => {
+        if (!game || !game.moves || game.moves.length === 0) return;
+        setLiveGame(game); // Save current state
+        setIsReplaying(true);
+        setReplayIndex(0);
+        setIsAutoPlaying(false);
+    };
+
+    const exitReplay = () => {
+        setIsReplaying(false);
+        setIsAutoPlaying(false);
+        if (liveGame) {
+            setGame(liveGame); // Restore live state
+        }
+    };
+
+    const goToStart = () => { setIsAutoPlaying(false); setReplayIndex(0); };
+    const goToPrevious = () => { setIsAutoPlaying(false); setReplayIndex(Math.max(0, replayIndex - 1)); };
+    const goToNext = () => { setIsAutoPlaying(false); setReplayIndex(Math.min(game.moves.length, replayIndex + 1)); };
+    const goToEnd = () => { setIsAutoPlaying(false); setReplayIndex(game.moves.length); };
+    const toggleAutoPlay = () => setIsAutoPlaying(!isAutoPlaying);
+
     if (!game) {
         return (
             <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
@@ -115,16 +179,77 @@ function GamePage() {
 
     const isMyTurn = (role === 'player' && game.currentTurn === 'player') || (role === 'crowd' && game.currentTurn === 'crowd');
 
+    // Determine which board to display
+    const displayBoard = isReplaying
+        ? reconstructBoard((game.moves || []).slice(0, replayIndex))
+        : game.board;
+
+    const hasHistory = game.moves && game.moves.length > 0;
+
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-8 font-sans">
-            <div className="mb-4">
+            <div className="mb-4 w-full flex justify-between items-center px-4 max-w-2xl">
                 <button
                     onClick={() => navigate('/dashboard')}
                     className="bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
                 >
                     ← Back to Dashboard
                 </button>
+                {hasHistory && !isReplaying && (
+                    <button
+                        onClick={startReplay}
+                        className="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2"
+                    >
+                        🎬 Replay Game
+                    </button>
+                )}
+                {isReplaying && (
+                    <button
+                        onClick={exitReplay}
+                        className="bg-red-600 px-4 py-2 rounded-lg hover:bg-red-500 transition-colors flex items-center gap-2"
+                    >
+                        🔴 Return to Live
+                    </button>
+                )}
             </div>
+
+            {/* Color Legend */}
+            <div className="mb-6 flex justify-center gap-6 text-sm">
+                <div className="flex items-center gap-2 bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
+                    <div className="w-6 h-6 rounded bg-red-500"></div>
+                    <span className="text-gray-300">The One (Player)</span>
+                </div>
+                <div className="flex items-center gap-2 bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
+                    <div className="w-6 h-6 rounded bg-yellow-400"></div>
+                    <span className="text-gray-300">The Crowd</span>
+                </div>
+            </div>
+
+            {/* Replay Controls */}
+            {isReplaying && (
+                <div className="mb-6 bg-gray-800 px-6 py-4 rounded-lg border border-blue-500/50">
+                    <div className="flex items-center justify-center gap-3 mb-2">
+                        <button onClick={goToStart} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-colors" title="Start">⏮</button>
+                        <button onClick={goToPrevious} disabled={replayIndex === 0} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="Previous">⏪</button>
+
+                        <button
+                            onClick={toggleAutoPlay}
+                            className={`px-4 py-1 rounded transition-colors flex items-center gap-1 ${isAutoPlaying ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-500'}`}
+                            title={isAutoPlaying ? "Pause Auto-play" : "Start Auto-play"}
+                        >
+                            {isAutoPlaying ? '⏸️' : '▶️'}
+                        </button>
+
+                        <span className="text-blue-400 font-mono px-3 min-w-[100px] text-center">
+                            Move {replayIndex} / {game.moves.length}
+                        </span>
+
+                        <button onClick={goToNext} disabled={replayIndex === game.moves.length} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="Next">⏩</button>
+                        <button onClick={goToEnd} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-colors" title="End">⏭</button>
+                    </div>
+                    <p className="text-xs text-center text-gray-400">Viewing game history • {liveGame && liveGame !== game ? '🔴 Live game updated in background' : ''}</p>
+                </div>
+            )}
 
             <div className="mb-8 text-center px-4">
                 <h1 className="text-2xl md:text-4xl font-bold mb-2">
@@ -162,9 +287,9 @@ function GamePage() {
             )}
 
             <Board
-                board={game.board}
+                board={displayBoard}
                 onColumnClick={handleColumnClick}
-                votes={role === 'crowd' ? votes : null}
+                votes={role === 'crowd' && !isReplaying ? votes : null}
             />
 
             <div className="mt-12 text-center text-gray-500">

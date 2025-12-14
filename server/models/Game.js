@@ -13,6 +13,11 @@ const gameSchema = new mongoose.Schema({
     },
     currentTurn: { type: String, enum: ['player', 'crowd'], default: 'player' },
     winner: { type: String, enum: ['player', 'crowd', 'draw', null], default: null },
+    moves: [{
+        col: { type: Number, required: true },
+        player: { type: String, enum: ['player', 'crowd'], required: true },
+        timestamp: { type: Date, default: Date.now }
+    }],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
