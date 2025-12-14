@@ -6,8 +6,9 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 import { v4 as uuidv4 } from 'uuid';
+import API_URL from '../config';
 
-const socket = io('http://localhost:3001');
+const socket = io(API_URL);
 
 function GamePage() {
     const { gameId } = useParams();
@@ -64,7 +65,7 @@ function GamePage() {
 
     const loadGame = async (gId, uId) => {
         try {
-            const res = await axios.get(`http://localhost:3001/api/games/${gId}`);
+            const res = await axios.get(`${API_URL}/api/games/${gId}`);
             const loadedGame = res.data;
 
             // Determine role: if user is the player, set role as player, otherwise crowd

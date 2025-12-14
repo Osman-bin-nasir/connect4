@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import API_URL from '../config';
 
 function Dashboard() {
     const [games, setGames] = useState([]);
@@ -30,7 +31,7 @@ function Dashboard() {
     const fetchGames = async () => {
         try {
             const userId = localStorage.getItem('userId');
-            const res = await axios.get(`http://localhost:3001/api/games/user/${userId}`);
+            const res = await axios.get(`${API_URL}/api/games/user/${userId}`);
             setGames(res.data);
         } catch (err) {
             console.error('Failed to fetch games', err);
@@ -46,7 +47,7 @@ function Dashboard() {
 
         try {
             const userId = localStorage.getItem('userId');
-            const res = await axios.post('http://localhost:3001/api/games', {
+            const res = await axios.post(`${API_URL}/api/games`, {
                 turnDuration: selectedTime,
                 name: newGameName,
                 userId
@@ -69,7 +70,7 @@ function Dashboard() {
 
         try {
             const userId = localStorage.getItem('userId');
-            await axios.put(`http://localhost:3001/api/games/${gameId}`, {
+            await axios.put(`${API_URL}/api/games/${gameId}`, {
                 name: editingName,
                 userId
             });
@@ -93,7 +94,7 @@ function Dashboard() {
                             toast.dismiss(t.id);
                             try {
                                 const userId = localStorage.getItem('userId');
-                                await axios.delete(`http://localhost:3001/api/games/${gameId}`, {
+                                await axios.delete(`${API_URL}/api/games/${gameId}`, {
                                     data: { userId }
                                 });
                                 toast.success('Game deleted!');
