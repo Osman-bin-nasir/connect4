@@ -10,6 +10,7 @@ function Dashboard() {
     const [isCreating, setIsCreating] = useState(false);
     const [newGameName, setNewGameName] = useState('');
     const [selectedTime, setSelectedTime] = useState(30);
+    const [isPublic, setIsPublic] = useState(true);
     const [editingId, setEditingId] = useState(null);
     const [editingName, setEditingName] = useState('');
     const navigate = useNavigate();
@@ -50,12 +51,14 @@ function Dashboard() {
             const res = await axios.post(`${API_URL}/api/games`, {
                 turnDuration: selectedTime,
                 name: newGameName,
-                userId
+                userId,
+                isPublic
             });
 
             toast.success('Game created!');
             setIsCreating(false);
             setNewGameName('');
+            setIsPublic(true); // Reset to default
             navigate(`/game/${res.data._id}`);
         } catch (err) {
             toast.error('Failed to create game');
@@ -187,6 +190,38 @@ function Dashboard() {
                             </div>
                         </div>
 
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium mb-2">Visibility</label>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setIsPublic(true)}
+                                    className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${isPublic
+                                        ? 'bg-green-500 text-black border-2 border-green-400'
+                                        : 'bg-gray-700 text-gray-300 border-2 border-gray-600'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-center gap-2">
+                                        <span>🌐</span>
+                                        <span>Public</span>
+                                    </div>
+                                    <p className="text-xs mt-1 opacity-75">Visible to everyone</p>
+                                </button>
+                                <button
+                                    onClick={() => setIsPublic(false)}
+                                    className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${!isPublic
+                                        ? 'bg-blue-500 text-black border-2 border-blue-400'
+                                        : 'bg-gray-700 text-gray-300 border-2 border-gray-600'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-center gap-2">
+                                        <span>🔒</span>
+                                        <span>Private</span>
+                                    </div>
+                                    <p className="text-xs mt-1 opacity-75">Only via direct link</p>
+                                </button>
+                            </div>
+                        </div>
+
                         <div className="flex gap-3">
                             <button
                                 onClick={handleCreateGame}
@@ -247,7 +282,13 @@ function Dashboard() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <h3 className="text-2xl font-bold mb-3 text-yellow-400">{game.name}</h3>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h3 className="text-2xl font-bold text-yellow-400">{game.name}</h3>
+                                            <span className={`text-sm px-2 py-1 rounded ${game.isPublic !== false ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                                                }`}>
+                                                {game.isPublic !== false ? '🌐 Public' : '🔒 Private'}
+                                            </span>
+                                        </div>
                                     )}
 
                                     <div className="space-y-2 text-sm text-gray-400 mb-4">
@@ -256,6 +297,16 @@ function Dashboard() {
                                         {game.winner && (
                                             <p>Winner: <span className="text-green-400 font-semibold">{game.winner === 'player' ? username : 'The Crowd'}</span></p>
                                         )}
+                                        <div className="flex gap-4 mt-2">
+                                            <span className="flex items-center gap-1">
+                                                <span>❤️</span>
+                                                <span className="font-semibold text-red-400">{game.hearts?.length || 0}</span>
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <span>🎮</span>
+                                                <span className="font-semibold text-blue-400">{game.plays || 0}</span>
+                                            </span>
+                                        </div>
                                         <p className="text-xs font-mono bg-gray-900 px-2 py-1 rounded">ID: {game._id}</p>
                                     </div>
 

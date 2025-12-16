@@ -6,14 +6,15 @@ const User = require('../models/User');
 // Create a new game
 router.post('/', async (req, res) => {
     try {
-        const { turnDuration, name, userId } = req.body;
+        const { turnDuration, name, userId, isPublic } = req.body;
         // fallback to 30 only if undefined, allowing 0
         const duration = (turnDuration !== undefined && turnDuration !== null) ? turnDuration : 30;
         const game = new Game({
             turnDuration: duration,
             name: name || 'Untitled Game',
             singlePlayerId: userId || null,
-            status: userId ? 'active' : 'waiting'
+            status: userId ? 'active' : 'waiting',
+            isPublic: isPublic !== undefined ? isPublic : true
         });
         await game.save();
         res.status(201).json(game);
@@ -59,11 +60,160 @@ router.get('/leaderboard', async (req, res) => {
     }
 });
 
+// Get popular games (Most Loved / Most Played)
+router.get('/popular', async (req, res) => {
+    try {
+        const { type = 'both' } = req.query;
+
+        const result = {};
+
+        // Get most loved games (by hearts count)
+        if (type === 'loved' || type === 'both') {
+            const mostLoved = await Game.aggregate([
+                { $match: { isPublic: true } },
+                { $addFields: { heartCount: { $size: { $ifNull: ['$hearts', []] } } } },
+                { $sort: { heartCount: -1 } },
+                { $limit: 10 },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'singlePlayerId',
+                        foreignField: '_id',
+                        as: 'player'
+                    }
+                },
+                { $unwind: { path: '$player', preserveNullAndEmptyArrays: true } },
+                {
+                    $project: {
+                        _id: 1,
+                        name: 1,
+                        status: 1,
+                        plays: 1,
+                        hearts: 1,
+                        heartCount: 1,
+                        createdAt: 1,
+                        singlePlayerId: {
+                            _id: '$player._id',
+                            username: '$player.username'
+                        }
+                    }
+                }
+            ]);
+
+            result.mostLoved = mostLoved;
+        }
+
+        // Get most played games (by plays count)
+        if (type === 'played' || type === 'both') {
+            const mostPlayed = await Game.aggregate([
+                { $match: { isPublic: true } },
+                { $addFields: { heartCount: { $size: { $ifNull: ['$hearts', []] } } } },
+                { $sort: { plays: -1 } },
+                { $limit: 10 },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'singlePlayerId',
+                        foreignField: '_id',
+                        as: 'player'
+                    }
+                },
+                { $unwind: { path: '$player', preserveNullAndEmptyArrays: true } },
+                {
+                    $project: {
+                        _id: 1,
+                        name: 1,
+                        status: 1,
+                        plays: 1,
+                        hearts: 1,
+                        heartCount: 1,
+                        createdAt: 1,
+                        singlePlayerId: {
+                            _id: '$player._id',
+                            username: '$player.username'
+                        }
+                    }
+                }
+            ]);
+
+            result.mostPlayed = mostPlayed;
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Heart a game
+router.post('/:id/heart', async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const game = await Game.findById(req.params.id);
+        if (!game) return res.status(404).json({ error: 'Game not found' });
+
+        // Check if user already hearted this game
+        const hearts = game.hearts || [];
+        if (hearts.some(id => id.toString() === userId)) {
+            return res.status(400).json({ error: 'Already hearted this game' });
+        }
+
+        // Add user to hearts array
+        game.hearts = [...hearts, userId];
+        await game.save();
+
+        res.json({
+            success: true,
+            heartCount: game.hearts.length,
+            hearts: game.hearts
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Unheart a game
+router.delete('/:id/heart', async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const game = await Game.findById(req.params.id);
+        if (!game) return res.status(404).json({ error: 'Game not found' });
+
+        // Remove user from hearts array
+        const hearts = game.hearts || [];
+        game.hearts = hearts.filter(id => id.toString() !== userId);
+        await game.save();
+
+        res.json({
+            success: true,
+            heartCount: game.hearts.length,
+            hearts: game.hearts
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get game state
 router.get('/:id', async (req, res) => {
     try {
         const game = await Game.findById(req.params.id).populate('singlePlayerId', 'username');
         if (!game) return res.status(404).json({ error: 'Game not found' });
+
+        // Increment plays counter
+        game.plays = (game.plays || 0) + 1;
+        await game.save();
+
         res.json(game);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -103,10 +253,10 @@ router.get('/user/:userId', async (req, res) => {
     }
 });
 
-// Rename game
+// Rename game / Update game settings
 router.put('/:id', async (req, res) => {
     try {
-        const { name, userId } = req.body;
+        const { name, userId, isPublic } = req.body;
         const game = await Game.findById(req.params.id);
 
         if (!game) return res.status(404).json({ error: 'Game not found' });
@@ -116,7 +266,8 @@ router.put('/:id', async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
-        game.name = name;
+        if (name !== undefined) game.name = name;
+        if (isPublic !== undefined) game.isPublic = isPublic;
         game.updatedAt = Date.now();
         await game.save();
 

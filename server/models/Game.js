@@ -18,6 +18,10 @@ const gameSchema = new mongoose.Schema({
         player: { type: String, enum: ['player', 'crowd'], required: true },
         timestamp: { type: Date, default: Date.now }
     }],
+    // Community features
+    hearts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Users who hearted this game
+    plays: { type: Number, default: 0 }, // Total number of plays/views
+    isPublic: { type: Boolean, default: true }, // Public or private game
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });

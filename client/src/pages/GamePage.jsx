@@ -24,6 +24,7 @@ function GamePage() {
     const [replayIndex, setReplayIndex] = useState(0);
     const [liveGame, setLiveGame] = useState(null);
     const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+    const [isHearted, setIsHearted] = useState(false);
 
     useEffect(() => {
         const id = localStorage.getItem('userId');
@@ -108,6 +109,11 @@ function GamePage() {
                 setRole('crowd');
             }
 
+            // Check if user has hearted this game
+            if (uId && loadedGame.hearts) {
+                setIsHearted(loadedGame.hearts.includes(uId));
+            }
+
             setGame(loadedGame);
         } catch (err) {
             console.error('Failed to load game', err);
@@ -129,6 +135,48 @@ function GamePage() {
     const handleForceMove = () => {
         if (game && role === 'player') {
             socket.emit('force_crowd_move', { gameId: game._id, userId });
+        }
+    };
+
+    const handleHeartClick = async () => {
+        if (!userId) {
+            toast.error('Please log in or create an account to heart a game', {
+                duration: 4000,
+                icon: '💔'
+            });
+            return;
+        }
+
+        try {
+            if (isHearted) {
+                // Unheart
+                await axios.delete(`${API_URL}/api/games/${gameId}/heart`, {
+                    data: { userId }
+                });
+                setIsHearted(false);
+                toast.success('Removed from favorites');
+                // Update game hearts count
+                if (game) {
+                    setGame({
+                        ...game,
+                        hearts: game.hearts.filter(id => id !== userId)
+                    });
+                }
+            } else {
+                // Heart
+                await axios.post(`${API_URL}/api/games/${gameId}/heart`, { userId });
+                setIsHearted(true);
+                toast.success('Added to favorites!', { icon: '❤️' });
+                // Update game hearts count
+                if (game) {
+                    setGame({
+                        ...game,
+                        hearts: [...(game.hearts || []), userId]
+                    });
+                }
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Failed to update heart');
         }
     };
 
@@ -210,15 +258,28 @@ function GamePage() {
                     </svg>
                     Back to Dashboard
                 </button>
-                <button
-                    onClick={handleShare}
-                    className="flex items-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-lg transition-colors border border-yellow-500/30"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                    <span>Invite Crowd</span>
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleHeartClick}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border ${isHearted
+                                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30'
+                                : 'bg-gray-700/50 hover:bg-gray-700 text-gray-400 border-gray-600/30'
+                            }`}
+                        title={userId ? (isHearted ? 'Unheart' : 'Heart this game') : 'Login to heart'}
+                    >
+                        <span className="text-lg">{isHearted ? '❤️' : '🤍'}</span>
+                        <span className="font-semibold">{game?.hearts?.length || 0}</span>
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="flex items-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-lg transition-colors border border-yellow-500/30"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        <span>Invite Crowd</span>
+                    </button>
+                </div>
             </div>
 
             {/* Color Legend */}
