@@ -22,6 +22,43 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Get leaderboard (Hall of Fame)
+router.get('/leaderboard', async (req, res) => {
+    try {
+        const leaderboard = await Game.aggregate([
+            { $match: { winner: 'player' } },
+            {
+                $group: {
+                    _id: '$singlePlayerId',
+                    wins: { $sum: 1 }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            { $unwind: '$user' },
+            {
+                $project: {
+                    _id: 1,
+                    username: '$user.username',
+                    wins: 1
+                }
+            },
+            { $sort: { wins: -1 } },
+            { $limit: 10 }
+        ]);
+
+        res.json(leaderboard);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get game state
 router.get('/:id', async (req, res) => {
     try {
