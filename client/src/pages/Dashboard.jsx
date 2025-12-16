@@ -303,8 +303,8 @@ function Dashboard() {
                                                 <span className="font-semibold text-red-400">{game.hearts?.length || 0}</span>
                                             </span>
                                             <span className="flex items-center gap-1">
-                                                <span>🎮</span>
-                                                <span className="font-semibold text-blue-400">{game.plays || 0}</span>
+                                                <span>👥</span>
+                                                <span className="font-semibold text-blue-400">{game.uniquePlayers?.length || 0}</span>
                                             </span>
                                         </div>
                                         <p className="text-xs font-mono bg-gray-900 px-2 py-1 rounded">ID: {game._id}</p>

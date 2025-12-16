@@ -124,13 +124,13 @@ function Home() {
                             <span className="font-semibold">{game.heartCount || 0}</span>
                         </span>
                         <span className="flex items-center gap-1 text-blue-400">
-                            <span>🎮</span>
-                            <span className="font-semibold">{game.plays || 0}</span>
+                            <span>👥</span>
+                            <span className="font-semibold">{game.playerCount || 0}</span>
                         </span>
                     </div>
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${game.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                            game.status === 'completed' ? 'bg-gray-500/20 text-gray-400' :
-                                'bg-yellow-500/20 text-yellow-400'
+                        game.status === 'completed' ? 'bg-gray-500/20 text-gray-400' :
+                            'bg-yellow-500/20 text-yellow-400'
                         }`}>
                         {game.status}
                     </span>
@@ -203,8 +203,8 @@ function Home() {
                     <button
                         onClick={() => setActiveTab('loved')}
                         className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'loved'
-                                ? 'bg-gradient-to-r from-red-600 to-pink-600 shadow-lg shadow-red-500/30'
-                                : 'bg-gray-800 hover:bg-gray-700'
+                            ? 'bg-gradient-to-r from-red-600 to-pink-600 shadow-lg shadow-red-500/30'
+                            : 'bg-gray-800 hover:bg-gray-700'
                             }`}
                     >
                         ❤️ Most Loved
@@ -212,8 +212,8 @@ function Home() {
                     <button
                         onClick={() => setActiveTab('played')}
                         className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'played'
-                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30'
-                                : 'bg-gray-800 hover:bg-gray-700'
+                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30'
+                            : 'bg-gray-800 hover:bg-gray-700'
                             }`}
                     >
                         🎮 Most Played

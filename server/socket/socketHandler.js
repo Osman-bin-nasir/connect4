@@ -52,6 +52,11 @@ module.exports = (io) => {
                     // Record the move for replay
                     game.moves.push({ col, player: 'player', timestamp: new Date() });
 
+                    // Track unique player
+                    if (userId && !game.uniquePlayers.includes(userId)) {
+                        game.uniquePlayers.push(userId);
+                    }
+
                     const winner = checkWin(game.board);
                     if (winner) {
                         game.winner = 'player';
@@ -72,7 +77,7 @@ module.exports = (io) => {
             }
         });
 
-        socket.on('cast_vote', ({ gameId, col, crowdUserId }) => {
+        socket.on('cast_vote', async ({ gameId, col, crowdUserId }) => {
             const voterId = crowdUserId || socket.id; // Fallback to socket.id if not provided
 
             // Initialize vote tracking structures if needed
@@ -92,6 +97,17 @@ module.exports = (io) => {
             // Record vote and mark user as voted
             gameVotes[gameId][col]++;
             gameVoters[gameId].add(voterId);
+
+            // Track unique crowd player (only on first vote ever, not per turn)
+            try {
+                const game = await Game.findById(gameId);
+                if (game && crowdUserId && !game.uniquePlayers.includes(crowdUserId)) {
+                    game.uniquePlayers.push(crowdUserId);
+                    await game.save();
+                }
+            } catch (err) {
+                console.error('Error tracking unique crowd player:', err);
+            }
 
             io.to(gameId).emit('vote_update', {
                 votes: gameVotes[gameId],

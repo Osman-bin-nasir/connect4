@@ -71,7 +71,12 @@ router.get('/popular', async (req, res) => {
         if (type === 'loved' || type === 'both') {
             const mostLoved = await Game.aggregate([
                 { $match: { isPublic: true } },
-                { $addFields: { heartCount: { $size: { $ifNull: ['$hearts', []] } } } },
+                {
+                    $addFields: {
+                        heartCount: { $size: { $ifNull: ['$hearts', []] } },
+                        playerCount: { $size: { $ifNull: ['$uniquePlayers', []] } }
+                    }
+                },
                 { $sort: { heartCount: -1 } },
                 { $limit: 10 },
                 {
@@ -88,7 +93,7 @@ router.get('/popular', async (req, res) => {
                         _id: 1,
                         name: 1,
                         status: 1,
-                        plays: 1,
+                        playerCount: 1,
                         hearts: 1,
                         heartCount: 1,
                         createdAt: 1,
@@ -103,12 +108,17 @@ router.get('/popular', async (req, res) => {
             result.mostLoved = mostLoved;
         }
 
-        // Get most played games (by plays count)
+        // Get most played games (by unique players count)
         if (type === 'played' || type === 'both') {
             const mostPlayed = await Game.aggregate([
                 { $match: { isPublic: true } },
-                { $addFields: { heartCount: { $size: { $ifNull: ['$hearts', []] } } } },
-                { $sort: { plays: -1 } },
+                {
+                    $addFields: {
+                        heartCount: { $size: { $ifNull: ['$hearts', []] } },
+                        playerCount: { $size: { $ifNull: ['$uniquePlayers', []] } }
+                    }
+                },
+                { $sort: { playerCount: -1 } },
                 { $limit: 10 },
                 {
                     $lookup: {
@@ -124,7 +134,7 @@ router.get('/popular', async (req, res) => {
                         _id: 1,
                         name: 1,
                         status: 1,
-                        plays: 1,
+                        playerCount: 1,
                         hearts: 1,
                         heartCount: 1,
                         createdAt: 1,
@@ -209,10 +219,6 @@ router.get('/:id', async (req, res) => {
     try {
         const game = await Game.findById(req.params.id).populate('singlePlayerId', 'username');
         if (!game) return res.status(404).json({ error: 'Game not found' });
-
-        // Increment plays counter
-        game.plays = (game.plays || 0) + 1;
-        await game.save();
 
         res.json(game);
     } catch (err) {

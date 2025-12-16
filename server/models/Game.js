@@ -20,7 +20,7 @@ const gameSchema = new mongoose.Schema({
     }],
     // Community features
     hearts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Users who hearted this game
-    plays: { type: Number, default: 0 }, // Total number of plays/views
+    uniquePlayers: [{ type: String }], // Unique user/crowd IDs who have made moves (for tracking actual plays)
     isPublic: { type: Boolean, default: true }, // Public or private game
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
