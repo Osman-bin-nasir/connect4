@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Heart, Globe, Lock } from 'lucide-react';
+import { Heart, Globe, Lock, Users, Clock, Zap } from 'lucide-react';
 import API_URL from '../config';
 
 function Dashboard() {
@@ -10,6 +10,7 @@ function Dashboard() {
     const [username, setUsername] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [newGameName, setNewGameName] = useState('');
+    const [newCrowdName, setNewCrowdName] = useState('The Crowd');
     const [selectedTime, setSelectedTime] = useState(30);
     const [isPublic, setIsPublic] = useState(true);
     const [editingId, setEditingId] = useState(null);
@@ -52,6 +53,7 @@ function Dashboard() {
             const res = await axios.post(`${API_URL}/api/games`, {
                 turnDuration: selectedTime,
                 name: newGameName,
+                crowdName: newCrowdName,
                 userId,
                 isPublic
             });
@@ -59,6 +61,7 @@ function Dashboard() {
             toast.success('Game created!');
             setIsCreating(false);
             setNewGameName('');
+            setNewCrowdName('The Crowd');
             setIsPublic(true); // Reset to default
             navigate(`/game/${res.data._id}`);
         } catch (err) {
@@ -159,85 +162,111 @@ function Dashboard() {
                     </button>
                 )}
 
-                {/* Create Game Form */}
                 {isCreating && (
-                    <div className="mb-8 bg-gray-800 p-6 rounded-xl border-2 border-yellow-500/30">
-                        <h2 className="text-2xl font-bold mb-4">Create New Game</h2>
+                    <div className="mb-12 bg-gray-800/80 backdrop-blur-md p-6 md:p-8 rounded-2xl border border-gray-700 shadow-2xl animate-fade-in-up">
+                        <h2 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+                            Configure New Game
+                        </h2>
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium mb-2">Game Name</label>
-                            <input
-                                type="text"
-                                value={newGameName}
-                                onChange={(e) => setNewGameName(e.target.value)}
-                                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-yellow-500"
-                                placeholder="My Epic Game"
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div className="space-y-2">
+                                <label className="block text-sm font-semibold text-gray-400">Game Name</label>
+                                <input
+                                    type="text"
+                                    value={newGameName}
+                                    onChange={(e) => setNewGameName(e.target.value)}
+                                    className="w-full bg-gray-900/50 text-white px-4 py-3 rounded-xl border border-gray-600 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 outline-none transition-all"
+                                    placeholder="e.g. My Epic Game"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="block text-sm font-semibold text-gray-400">Crowd Name</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={newCrowdName}
+                                        onChange={(e) => setNewCrowdName(e.target.value)}
+                                        className="w-full bg-gray-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-gray-600 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 outline-none transition-all"
+                                        placeholder="The Crowd"
+                                    />
+                                    <Users className="w-5 h-5 text-gray-500 absolute left-3 top-3.5" />
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium mb-2">Turn Duration</label>
-                            <div className="flex gap-4">
-                                {[10, 30, 60, 0].map((time) => (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                            {/* Time Control */}
+                            <div className="space-y-3">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-400">
+                                    <Clock className="w-4 h-4" /> Turn Duration
+                                </label>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    {[10, 30, 60, 0].map((time) => (
+                                        <button
+                                            key={time}
+                                            onClick={() => setSelectedTime(time)}
+                                            className={`relative px-2 py-3 rounded-xl font-bold text-sm transition-all border ${selectedTime === time
+                                                ? 'bg-gradient-to-br from-green-500 to-green-600 text-white border-green-400 shadow-lg shadow-green-500/20 scale-105'
+                                                : 'bg-gray-700/50 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                                                }`}
+                                        >
+                                            {time === 0 ? <span className="flex items-center justify-center gap-1"><Zap className="w-3 h-3" /> Infinite</span> : `${time}s`}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Visibility */}
+                            <div className="space-y-3">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-400">
+                                    <Globe className="w-4 h-4" /> Visibility
+                                </label>
+                                <div className="flex gap-4">
                                     <button
-                                        key={time}
-                                        onClick={() => setSelectedTime(time)}
-                                        className={`px-4 py-2 rounded-lg font-bold transition-colors ${selectedTime === time ? 'bg-green-500 text-black' : 'bg-gray-700 text-gray-300'
+                                        onClick={() => setIsPublic(true)}
+                                        className={`flex-1 p-3 rounded-xl border transition-all text-left group ${isPublic
+                                            ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+                                            : 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/50'
                                             }`}
                                     >
-                                        {time === 0 ? 'Infinite' : `${time}s`}
+                                        <div className={`flex items-center gap-2 font-bold mb-1 ${isPublic ? 'text-blue-400' : 'text-gray-300'}`}>
+                                            <Globe className="w-4 h-4" /> Public
+                                        </div>
+                                        <p className="text-xs text-gray-500 group-hover:text-gray-400">Visible to everyone on the dashboard.</p>
                                     </button>
-                                ))}
+
+                                    <button
+                                        onClick={() => setIsPublic(false)}
+                                        className={`flex-1 p-3 rounded-xl border transition-all text-left group ${!isPublic
+                                            ? 'bg-purple-500/10 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
+                                            : 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/50'
+                                            }`}
+                                    >
+                                        <div className={`flex items-center gap-2 font-bold mb-1 ${!isPublic ? 'text-purple-400' : 'text-gray-300'}`}>
+                                            <Lock className="w-4 h-4" /> Private
+                                        </div>
+                                        <p className="text-xs text-gray-500 group-hover:text-gray-400">Only accessible via direct link.</p>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium mb-2">Visibility</label>
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={() => setIsPublic(true)}
-                                    className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${isPublic
-                                        ? 'bg-green-500 text-black border-2 border-green-400'
-                                        : 'bg-gray-700 text-gray-300 border-2 border-gray-600'
-                                        }`}
-                                >
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Globe className="w-5 h-5" />
-                                        <span>Public</span>
-                                    </div>
-                                    <p className="text-xs mt-1 opacity-75">Visible to everyone</p>
-                                </button>
-                                <button
-                                    onClick={() => setIsPublic(false)}
-                                    className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${!isPublic
-                                        ? 'bg-blue-500 text-black border-2 border-blue-400'
-                                        : 'bg-gray-700 text-gray-300 border-2 border-gray-600'
-                                        }`}
-                                >
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Lock className="w-5 h-5" />
-                                        <span>Private</span>
-                                    </div>
-                                    <p className="text-xs mt-1 opacity-75">Only via direct link</p>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={handleCreateGame}
-                                className="bg-green-600 px-6 py-3 rounded-lg font-bold hover:bg-green-500 transition-colors"
-                            >
-                                Create
-                            </button>
+                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
                             <button
                                 onClick={() => {
                                     setIsCreating(false);
                                     setNewGameName('');
+                                    setNewCrowdName('The Crowd');
                                 }}
-                                className="bg-gray-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-600 transition-colors"
+                                className="px-6 py-2.5 rounded-xl font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                             >
                                 Cancel
+                            </button>
+                            <button
+                                onClick={handleCreateGame}
+                                className="bg-gradient-to-r from-yellow-600 to-yellow-500 text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/40 hover:scale-105 transition-all"
+                            >
+                                Create Game
                             </button>
                         </div>
                     </div>

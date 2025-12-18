@@ -6,13 +6,14 @@ const User = require('../models/User');
 // Create a new game
 router.post('/', async (req, res) => {
     try {
-        const { turnDuration, name, userId, isPublic } = req.body;
+        const { turnDuration, name, userId, isPublic, crowdName } = req.body;
         // fallback to 30 only if undefined, allowing 0
         const duration = (turnDuration !== undefined && turnDuration !== null) ? turnDuration : 30;
         const game = new Game({
             turnDuration: duration,
             name: name || 'Untitled Game',
             singlePlayerId: userId || null,
+            crowdName: crowdName || 'The Crowd',
             status: userId ? 'active' : 'waiting',
             isPublic: isPublic !== undefined ? isPublic : true
         });
