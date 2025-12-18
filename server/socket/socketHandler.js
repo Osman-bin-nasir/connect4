@@ -69,8 +69,8 @@ module.exports = (io) => {
                         startCrowdTimer(io, gameId);
                     }
                     game.markModified('board');
-                    await game.save();
-                    io.to(gameId).emit('game_state', game);
+                    const savedGame = await game.save();
+                    io.to(gameId).emit('game_state', savedGame);
                 }
             } catch (err) {
                 console.error(err);
@@ -241,8 +241,8 @@ async function resolveCrowdTurn(io, gameId) {
                 game.currentTurn = 'player';
             }
             game.markModified('board');
-            await game.save();
-            io.to(gameId).emit('game_state', game);
+            const savedGame = await game.save();
+            io.to(gameId).emit('game_state', savedGame);
             io.to(gameId).emit('last_crowd_move', { col: selectedCol });
         }
 

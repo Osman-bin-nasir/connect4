@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
-import { Heart, ArrowLeft, Share2, Play, Pause, SkipBack, SkipForward, FastForward, Rewind, Film, XCircle } from 'lucide-react';
+import { Heart, ArrowLeft, Share2, Play, Pause, SkipBack, SkipForward, FastForward, Rewind, Film, XCircle, Sparkles } from 'lucide-react';
 import Board from '../components/Board';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -386,8 +386,8 @@ function GamePage() {
                         onClick={startReplay}
                         className="group bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30 px-6 py-3 rounded-full font-bold transition-all transform hover:scale-105 flex items-center gap-2"
                     >
-                        <Film className="w-5 h-5" />
-                        <span className="group-hover:inline-block">Replay Game</span>
+                        <span className="group-hover:inline-block">Enhance Enhance</span>
+                        <Sparkles className="w-5 h-5" />
                     </button>
                 </div>
             )}
