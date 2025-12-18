@@ -5,6 +5,7 @@ const gameSchema = new mongoose.Schema({
     status: { type: String, enum: ['waiting', 'active', 'completed'], default: 'waiting' },
     singlePlayerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     crowdId: { type: String, default: 'crowd' },
+    crowdName: { type: String, default: 'The Crowd' },
     turnDuration: { type: Number, default: 30 }, // Seconds. 0 for infinite.
     // 6 rows, 7 columns. 0=empty, 1=player, 2=crowd
     board: {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
-import { Heart, ArrowLeft, Share2, Play, Pause, SkipBack, SkipForward, FastForward, Rewind, Film, XCircle, Sparkles } from 'lucide-react';
+import { Heart, ArrowLeft, Share2, Play, Pause, SkipBack, SkipForward, FastForward, Rewind, Film, XCircle, Sparkles, Check, X } from 'lucide-react';
 import Board from '../components/Board';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -26,6 +26,8 @@ function GamePage() {
     const [liveGame, setLiveGame] = useState(null);
     const [isAutoPlaying, setIsAutoPlaying] = useState(false);
     const [isHearted, setIsHearted] = useState(false);
+    const [isEditingCrowdName, setIsEditingCrowdName] = useState(false);
+    const [tempCrowdName, setTempCrowdName] = useState('The Crowd');
 
     useEffect(() => {
         const id = localStorage.getItem('userId');
@@ -116,6 +118,7 @@ function GamePage() {
             }
 
             setGame(loadedGame);
+            setTempCrowdName(loadedGame.crowdName || 'The Crowd');
         } catch (err) {
             console.error('Failed to load game', err);
             toast.error('Game not found');
@@ -186,6 +189,26 @@ function GamePage() {
         toast.success('Game link copied! Share it with the crowd!');
     };
 
+    const handleCrowdNameUpdate = async () => {
+        if (!tempCrowdName.trim()) {
+            toast.error('Crowd name cannot be empty');
+            return;
+        }
+
+        try {
+            const res = await axios.put(`${API_URL}/api/games/${gameId}`, {
+                crowdName: tempCrowdName.trim(),
+                userId
+            });
+            setGame(res.data);
+            setIsEditingCrowdName(false);
+            toast.success('Crowd renamed!');
+        } catch (err) {
+            toast.error('Failed to update crowd name');
+            console.error(err);
+        }
+    };
+
     // Replay functions
     const reconstructBoard = (moves) => {
         const board = Array(6).fill().map(() => Array(7).fill(0));
@@ -246,6 +269,7 @@ function GamePage() {
 
     const spId = game.singlePlayerId;
     const playerName = (spId && typeof spId === 'object') ? spId.username : 'The One';
+    const crowdName = game.crowdName || 'The Crowd';
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-8 font-sans">
@@ -283,11 +307,47 @@ function GamePage() {
             <div className="mb-6 flex justify-center gap-6 text-sm">
                 <div className="flex items-center gap-2 bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
                     <div className="w-6 h-6 rounded bg-red-500"></div>
-                    <span className="text-gray-300">{playerName} (Player)</span>
+                    <span className="text-gray-300">{playerName}</span>
                 </div>
                 <div className="flex items-center gap-2 bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
                     <div className="w-6 h-6 rounded bg-yellow-400"></div>
-                    <span className="text-gray-300">The Crowd</span>
+                    {isEditingCrowdName ? (
+                        <div className="flex items-center gap-1">
+                            <input
+                                type="text"
+                                value={tempCrowdName}
+                                onChange={(e) => setTempCrowdName(e.target.value)}
+                                className="bg-gray-700 text-white px-2 py-0.5 rounded border border-gray-600 focus:outline-none focus:border-yellow-500 w-32"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleCrowdNameUpdate();
+                                    if (e.key === 'Escape') {
+                                        setTempCrowdName(game.crowdName || 'The Crowd');
+                                        setIsEditingCrowdName(false);
+                                    }
+                                }}
+                            />
+                            <button onClick={handleCrowdNameUpdate} className="text-green-400 hover:text-green-300">
+                                <Check className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => {
+                                setTempCrowdName(game.crowdName || 'The Crowd');
+                                setIsEditingCrowdName(false);
+                            }} className="text-red-400 hover:text-red-300">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <span
+                            className={`text-gray-300 ${role === 'player' ? 'cursor-pointer hover:text-yellow-400 hover:underline decoration-dashed underline-offset-4' : ''}`}
+                            onDoubleClick={() => {
+                                if (role === 'player') setIsEditingCrowdName(true);
+                            }}
+                            title={role === 'player' ? "Double click to rename" : ""}
+                        >
+                            {crowdName}
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -336,9 +396,9 @@ function GamePage() {
             <div className="mb-8 text-center px-4">
                 <h1 className="text-2xl md:text-4xl font-bold mb-2">
                     {game.status === 'completed'
-                        ? <span className="text-green-400">Winner: {game.winner === 'player' ? playerName : 'The Crowd'}</span>
+                        ? <span className="text-green-400">Winner: {game.winner === 'player' ? playerName : crowdName}</span>
                         : <span className={game.currentTurn === 'player' ? 'text-red-500' : 'text-yellow-500'}>
-                            Turn: {game.currentTurn === 'player' ? playerName : 'The Crowd'}
+                            Turn: {game.currentTurn === 'player' ? playerName : crowdName}
                         </span>
                     }
                 </h1>

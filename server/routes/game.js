@@ -211,7 +211,7 @@ router.get('/user/:userId', async (req, res) => {
 // Rename game / Update game settings
 router.put('/:id', async (req, res) => {
     try {
-        const { name, userId, isPublic } = req.body;
+        const { name, userId, isPublic, crowdName } = req.body;
         const game = await Game.findById(req.params.id);
 
         if (!game) return res.status(404).json({ error: 'Game not found' });
@@ -222,6 +222,7 @@ router.put('/:id', async (req, res) => {
         }
 
         if (name !== undefined) game.name = name;
+        if (crowdName !== undefined) game.crowdName = crowdName;
         if (isPublic !== undefined) game.isPublic = isPublic;
         game.updatedAt = Date.now();
         await game.save();
