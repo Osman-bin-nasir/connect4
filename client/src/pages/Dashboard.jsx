@@ -7,6 +7,7 @@ import API_URL from '../config';
 
 function Dashboard() {
     const [games, setGames] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [username, setUsername] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [newGameName, setNewGameName] = useState('');
@@ -33,12 +34,15 @@ function Dashboard() {
 
     const fetchGames = async () => {
         try {
+            setIsLoading(true);
             const userId = localStorage.getItem('userId');
             const res = await axios.get(`${API_URL}/api/games/user/${userId}`);
             setGames(res.data);
         } catch (err) {
             console.error('Failed to fetch games', err);
             toast.error('Failed to load games');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -276,7 +280,28 @@ function Dashboard() {
                 <div>
                     <h2 className="text-3xl font-bold mb-6">Your Games</h2>
 
-                    {games.length === 0 ? (
+                    {isLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[1, 2, 3].map((n) => (
+                                <div key={n} className="bg-gray-800 p-6 rounded-xl border border-gray-700 h-64 animate-pulse">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="h-8 bg-gray-700 rounded w-1/2"></div>
+                                        <div className="h-6 bg-gray-700 rounded w-1/4"></div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                                        <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+                                        <div className="h-4 bg-gray-700 rounded w-2/3"></div>
+                                    </div>
+                                    <div className="mt-8 flex gap-2">
+                                        <div className="h-10 bg-gray-700 rounded flex-1"></div>
+                                        <div className="h-10 bg-gray-700 rounded w-20"></div>
+                                        <div className="h-10 bg-gray-700 rounded w-20"></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : games.length === 0 ? (
                         <div className="bg-gray-800 p-12 rounded-xl text-center">
                             <p className="text-gray-400 text-lg">No games yet. Create one to get started!</p>
                         </div>
