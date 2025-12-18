@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
+import { Heart, ArrowLeft, Share2, Play, Pause, SkipBack, SkipForward, FastForward, Rewind, Film, XCircle } from 'lucide-react';
 import Board from '../components/Board';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -253,30 +254,26 @@ function GamePage() {
                     onClick={() => navigate('/dashboard')}
                     className="hover:text-white transition-colors flex items-center gap-1"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                    </svg>
+                    <ArrowLeft className="w-5 h-5" />
                     Back to Dashboard
                 </button>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={handleHeartClick}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border ${isHearted
-                                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30'
-                                : 'bg-gray-700/50 hover:bg-gray-700 text-gray-400 border-gray-600/30'
+                            ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30'
+                            : 'bg-gray-700/50 hover:bg-gray-700 text-gray-400 border-gray-600/30'
                             }`}
                         title={userId ? (isHearted ? 'Unheart' : 'Heart this game') : 'Login to heart'}
                     >
-                        <span className="text-lg">{isHearted ? '❤️' : '🤍'}</span>
+                        <Heart className={`w-5 h-5 ${isHearted ? 'fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' : ''}`} />
                         <span className="font-semibold">{game?.hearts?.length || 0}</span>
                     </button>
                     <button
                         onClick={handleShare}
                         className="flex items-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-lg transition-colors border border-yellow-500/30"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                        </svg>
+                        <Share2 className="w-4 h-4" />
                         <span>Invite Crowd</span>
                     </button>
                 </div>
@@ -299,14 +296,10 @@ function GamePage() {
                 <div className="mb-8 bg-gray-800/80 backdrop-blur-md px-8 py-4 rounded-2xl border border-gray-700/50 shadow-xl flex flex-col items-center gap-3 animate-fade-in-up">
                     <div className="flex items-center gap-6">
                         <button onClick={goToStart} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all" title="Start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                            </svg>
+                            <SkipBack className="w-6 h-6" />
                         </button>
                         <button onClick={goToPrevious} disabled={replayIndex === 0} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all disabled:opacity-30 disabled:hover:bg-transparent" title="Previous">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
+                            <Rewind className="w-8 h-8" />
                         </button>
 
                         <button
@@ -315,26 +308,17 @@ function GamePage() {
                             title={isAutoPlaying ? "Pause" : "Play"}
                         >
                             {isAutoPlaying ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6" />
-                                </svg>
+                                <Pause className="w-8 h-8" />
                             ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                                <Play className="w-8 h-8 ml-1" />
                             )}
                         </button>
 
                         <button onClick={goToNext} disabled={replayIndex === game.moves.length} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all disabled:opacity-30 disabled:hover:bg-transparent" title="Next">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
+                            <FastForward className="w-8 h-8" />
                         </button>
                         <button onClick={goToEnd} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all" title="End">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                            </svg>
+                            <SkipForward className="w-6 h-6" />
                         </button>
                     </div>
 
@@ -402,7 +386,7 @@ function GamePage() {
                         onClick={startReplay}
                         className="group bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30 px-6 py-3 rounded-full font-bold transition-all transform hover:scale-105 flex items-center gap-2"
                     >
-                        <span>🎬</span>
+                        <Film className="w-5 h-5" />
                         <span className="group-hover:inline-block">Replay Game</span>
                     </button>
                 </div>
@@ -414,7 +398,7 @@ function GamePage() {
                         onClick={exitReplay}
                         className="group bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/30 px-6 py-3 rounded-full font-bold transition-all transform hover:scale-105 flex items-center gap-2"
                     >
-                        <span>🔴</span> Return to Live
+                        <XCircle className="w-5 h-5" /> Return to Live
                     </button>
                 </div>
             )}

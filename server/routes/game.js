@@ -60,96 +60,45 @@ router.get('/leaderboard', async (req, res) => {
     }
 });
 
-// Get popular games (Most Loved / Most Played)
+// Get popular games (Most Loved)
 router.get('/popular', async (req, res) => {
     try {
-        const { type = 'both' } = req.query;
-
-        const result = {};
-
-        // Get most loved games (by hearts count)
-        if (type === 'loved' || type === 'both') {
-            const mostLoved = await Game.aggregate([
-                { $match: { isPublic: true } },
-                {
-                    $addFields: {
-                        heartCount: { $size: { $ifNull: ['$hearts', []] } },
-                        playerCount: { $size: { $ifNull: ['$uniquePlayers', []] } }
-                    }
-                },
-                { $sort: { heartCount: -1 } },
-                { $limit: 10 },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'singlePlayerId',
-                        foreignField: '_id',
-                        as: 'player'
-                    }
-                },
-                { $unwind: { path: '$player', preserveNullAndEmptyArrays: true } },
-                {
-                    $project: {
-                        _id: 1,
-                        name: 1,
-                        status: 1,
-                        playerCount: 1,
-                        hearts: 1,
-                        heartCount: 1,
-                        createdAt: 1,
-                        singlePlayerId: {
-                            _id: '$player._id',
-                            username: '$player.username'
-                        }
+        const mostLoved = await Game.aggregate([
+            { $match: { isPublic: true } },
+            {
+                $addFields: {
+                    heartCount: { $size: { $ifNull: ['$hearts', []] } }
+                }
+            },
+            { $match: { heartCount: { $gt: 0 } } },
+            { $sort: { heartCount: -1 } },
+            { $limit: 10 },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'singlePlayerId',
+                    foreignField: '_id',
+                    as: 'player'
+                }
+            },
+            { $unwind: { path: '$player', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    status: 1,
+                    hearts: 1,
+                    heartCount: 1,
+                    createdAt: 1,
+                    singlePlayerId: {
+                        _id: '$player._id',
+                        username: '$player.username'
                     }
                 }
-            ]);
+            }
+        ]);
 
-            result.mostLoved = mostLoved;
-        }
-
-        // Get most played games (by unique players count)
-        if (type === 'played' || type === 'both') {
-            const mostPlayed = await Game.aggregate([
-                { $match: { isPublic: true } },
-                {
-                    $addFields: {
-                        heartCount: { $size: { $ifNull: ['$hearts', []] } },
-                        playerCount: { $size: { $ifNull: ['$uniquePlayers', []] } }
-                    }
-                },
-                { $sort: { playerCount: -1 } },
-                { $limit: 10 },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'singlePlayerId',
-                        foreignField: '_id',
-                        as: 'player'
-                    }
-                },
-                { $unwind: { path: '$player', preserveNullAndEmptyArrays: true } },
-                {
-                    $project: {
-                        _id: 1,
-                        name: 1,
-                        status: 1,
-                        playerCount: 1,
-                        hearts: 1,
-                        heartCount: 1,
-                        createdAt: 1,
-                        singlePlayerId: {
-                            _id: '$player._id',
-                            username: '$player.username'
-                        }
-                    }
-                }
-            ]);
-
-            result.mostPlayed = mostPlayed;
-        }
-
-        res.json(result);
+        res.json(mostLoved);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

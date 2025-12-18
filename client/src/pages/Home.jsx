@@ -4,14 +4,15 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import API_URL from '../config';
 
+import { Heart, Trophy } from 'lucide-react';
+
 function Home() {
     const [selectedTime, setSelectedTime] = useState(30);
     const [gameIdInput, setGameIdInput] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userId, setUserId] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
-    const [popularGames, setPopularGames] = useState({ mostLoved: [], mostPlayed: [] });
-    const [activeTab, setActiveTab] = useState('loved'); // 'loved' or 'played'
+    const [popularGames, setPopularGames] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -106,11 +107,11 @@ function Home() {
                             e.stopPropagation();
                             handleHeartClick(game._id, isHearted);
                         }}
-                        className={`text-2xl transition-transform hover:scale-110 ${isHearted ? 'animate-pulse' : ''
+                        className={`transition-transform hover:scale-110 p-2 rounded-full hover:bg-white/5 ${isHearted ? 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'text-gray-400 hover:text-red-400'
                             }`}
                         title={isLoggedIn ? (isHearted ? 'Unheart' : 'Heart this game') : 'Login to heart'}
                     >
-                        {isHearted ? '❤️' : '🤍'}
+                        <Heart className={`w-6 h-6 ${isHearted ? 'fill-red-500' : ''}`} />
                     </button>
                 </div>
 
@@ -119,13 +120,9 @@ function Home() {
                     onClick={() => navigate(`/game/${game._id}`)}
                 >
                     <div className="flex gap-4">
-                        <span className="flex items-center gap-1 text-red-400">
-                            <span>❤️</span>
-                            <span className="font-semibold">{game.heartCount || 0}</span>
-                        </span>
-                        <span className="flex items-center gap-1 text-blue-400">
-                            <span>👥</span>
-                            <span className="font-semibold">{game.playerCount || 0}</span>
+                        <span className="flex items-center gap-1 text-red-400 font-semibold">
+                            <Heart className="w-4 h-4 fill-red-400" />
+                            <span>{game.heartCount || 0}</span>
                         </span>
                     </div>
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${game.status === 'active' ? 'bg-green-500/20 text-green-400' :
@@ -139,11 +136,10 @@ function Home() {
         );
     };
 
-    const displayGames = activeTab === 'loved' ? popularGames.mostLoved : popularGames.mostPlayed;
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-12 font-sans px-4">
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-12 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-yellow-500 text-center">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-12 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-yellow-500 text-center drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]">
                 1 vs The Crowd
             </h1>
             <div className="flex flex-col gap-6 items-center mb-16">
@@ -163,13 +159,13 @@ function Home() {
                     </button>
                 )}
 
-                <div className="flex gap-2 items-center mt-8 bg-gray-800 p-4 rounded-xl">
+                <div className="flex gap-2 items-center mt-8 bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
                     <input
                         type="text"
                         value={gameIdInput}
                         onChange={(e) => setGameIdInput(e.target.value)}
                         placeholder="Enter Game ID"
-                        className="bg-gray-700 text-white px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-yellow-500"
+                        className="bg-gray-700 text-white px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-yellow-500 placeholder-gray-400"
                     />
                     <button
                         onClick={handleJoinAsCrowd}
@@ -192,122 +188,105 @@ function Home() {
                 )}
             </div>
 
-            {/* Popular Games Section */}
-            <div className="w-full max-w-6xl mb-20">
-                <h2 className="text-3xl font-bold mb-6 text-center flex items-center justify-center gap-3">
-                    <span className="text-yellow-400">🔥</span> Trending Games
-                </h2>
+            {/* Dashboard Content: Side-by-Side on Large Screens */}
+            <div className="w-full max-w-7xl flex flex-col lg:flex-row gap-8 lg:gap-12 lg:items-start">
 
-                {/* Tabs */}
-                <div className="flex justify-center gap-4 mb-8">
-                    <button
-                        onClick={() => setActiveTab('loved')}
-                        className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'loved'
-                            ? 'bg-gradient-to-r from-red-600 to-pink-600 shadow-lg shadow-red-500/30'
-                            : 'bg-gray-800 hover:bg-gray-700'
-                            }`}
-                    >
-                        ❤️ Most Loved
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('played')}
-                        className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'played'
-                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30'
-                            : 'bg-gray-800 hover:bg-gray-700'
-                            }`}
-                    >
-                        🎮 Most Played
-                    </button>
+                {/* Popular Games Section (Left/Main) */}
+                <div className="w-full lg:flex-[2]">
+                    <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3">
+                        <Heart className="w-8 h-8 text-red-500 fill-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">Most Loved Games</span>
+                    </h2>
+
+                    {popularGames && popularGames.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+                            {popularGames.slice(0, 6).map(renderGameCard)}
+                        </div>
+                    ) : (
+                        <div className="text-center text-gray-400 bg-gray-800/40 p-12 rounded-xl backdrop-blur-sm border border-gray-800">
+                            <Heart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                            <p className="text-lg">No hearted games yet.</p>
+                            <p className="text-sm text-gray-500 mt-2">Be the first to create and love a game!</p>
+                        </div>
+                    )}
                 </div>
 
-                {/* Games Grid */}
-                {displayGames && displayGames.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {displayGames.slice(0, 6).map(renderGameCard)}
-                    </div>
-                ) : (
-                    <div className="text-center text-gray-500 bg-gray-800/30 p-12 rounded-xl backdrop-blur-sm border border-gray-800">
-                        <p>No games yet. Be the first to create one!</p>
-                    </div>
-                )}
-            </div>
+                {/* Hall of Fame Section (Right/Side) */}
+                <div className="w-full lg:flex-1">
+                    <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3">
+                        <Trophy className="w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">Hall of Fame</span>
+                    </h2>
 
-            {/* Hall of Fame Section */}
-            <div className="w-full max-w-4xl">
-                <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3">
-                    <span className="text-yellow-400">🏆</span> Hall of Fame
-                </h2>
+                    {leaderboard.length === 0 ? (
+                        <div className="text-center text-gray-500 bg-gray-800/30 p-8 rounded-xl backdrop-blur-sm border border-gray-800">
+                            <p>No champions yet. Will you be the first?</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-3 w-full">
+                            {leaderboard.map((player, index) => {
+                                // Rank Styles
+                                const isFirst = index === 0;
+                                const isSecond = index === 1;
+                                const isThird = index === 2;
 
-                {leaderboard.length === 0 ? (
-                    <div className="text-center text-gray-500 bg-gray-800/30 p-8 rounded-xl backdrop-blur-sm border border-gray-800">
-                        <p>No champions yet. Will you be the first?</p>
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-3 w-full">
-                        {leaderboard.map((player, index) => {
-                            // Rank Styles
-                            const isFirst = index === 0;
-                            const isSecond = index === 1;
-                            const isThird = index === 2;
+                                const rankColor = isFirst ? 'text-yellow-400' :
+                                    isSecond ? 'text-gray-300' :
+                                        isThird ? 'text-orange-400' : 'text-gray-500';
 
-                            const rankColor = isFirst ? 'text-yellow-400' :
-                                isSecond ? 'text-gray-300' :
-                                    isThird ? 'text-orange-400' : 'text-gray-500';
+                                const borderColor = isFirst ? 'border-yellow-500/50 hover:border-yellow-400' :
+                                    isSecond ? 'border-gray-500/50 hover:border-gray-300' :
+                                        isThird ? 'border-orange-500/50 hover:border-orange-400' :
+                                            'border-gray-800 hover:border-gray-600';
 
-                            const borderColor = isFirst ? 'border-yellow-500/50 hover:border-yellow-400' :
-                                isSecond ? 'border-gray-500/50 hover:border-gray-300' :
-                                    isThird ? 'border-orange-500/50 hover:border-orange-400' :
-                                        'border-gray-800 hover:border-gray-600';
+                                const bgGradient = isFirst ? 'bg-gradient-to-r from-yellow-900/20 to-gray-800' :
+                                    isSecond ? 'bg-gradient-to-r from-gray-800 to-gray-800' :
+                                        isThird ? 'bg-gradient-to-r from-orange-900/20 to-gray-800' :
+                                            'bg-gray-800/40';
 
-                            const bgGradient = isFirst ? 'bg-gradient-to-r from-yellow-900/20 to-gray-800' :
-                                isSecond ? 'bg-gradient-to-r from-gray-800 to-gray-800' :
-                                    isThird ? 'bg-gradient-to-r from-orange-900/20 to-gray-800' :
-                                        'bg-gray-800/40';
+                                const glow = isFirst ? 'shadow-[0_0_15px_rgba(234,179,8,0.2)]' : '';
 
-                            const glow = isFirst ? 'shadow-[0_0_15px_rgba(234,179,8,0.2)]' : '';
-
-                            return (
-                                <div
-                                    key={player._id}
-                                    className={`
+                                return (
+                                    <div
+                                        key={player._id}
+                                        className={`
                                         relative flex items-center justify-between p-4 rounded-xl border transition-all duration-300 transform hover:scale-[1.02] hover:bg-gray-700/60
                                         ${borderColor} ${bgGradient} ${glow} backdrop-blur-md
                                     `}
-                                >
-                                    {/* Left: Rank & Name */}
-                                    <div className="flex items-center gap-4 md:gap-6">
-                                        <div className={`
+                                    >
+                                        {/* Left: Rank & Name */}
+                                        <div className="flex items-center gap-4 md:gap-6">
+                                            <div className={`
                                             font-mono text-xl md:text-2xl font-bold w-12 text-center
                                             ${rankColor}
                                         `}>
-                                            #{index + 1}
-                                        </div>
+                                                #{index + 1}
+                                            </div>
 
-                                        <div className="flex flex-col">
-                                            <span className={`
+                                            <div className="flex flex-col">
+                                                <span className={`
                                                 font-bold text-lg md:text-xl text-white
                                                 ${isFirst ? 'drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : ''}
                                             `}>
-                                                {player.username}
+                                                    {player.username}
+                                                </span>
+                                                {isFirst && <span className="text-xs text-yellow-500 font-bold tracking-wider uppercase">Champion</span>}
+                                            </div>
+                                        </div>
+
+                                        {/* Right: Wins */}
+                                        <div className="flex items-center gap-2">
+                                            <Trophy className={`w-6 h-6 ${isFirst ? 'text-yellow-400 fill-yellow-400' : isSecond ? 'text-gray-300 fill-gray-300' : isThird ? 'text-orange-400 fill-orange-400' : 'text-gray-500'}`} />
+                                            <span className={`font-mono font-bold text-xl md:text-2xl ${rankColor}`}>
+                                                {player.wins}
                                             </span>
-                                            {isFirst && <span className="text-xs text-yellow-500 font-bold tracking-wider uppercase">Champion</span>}
                                         </div>
                                     </div>
-
-                                    {/* Right: Wins */}
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-2xl">🏆</span>
-                                        <span className={`font-mono font-bold text-xl md:text-2xl ${rankColor}`}>
-                                            {player.wins}
-                                        </span>
-                                    </div>
-
-                                    {/* Subtle Glow Effect on Hover (Pseudo-element handled via Tailwind group/hover if needed, but simple bg change works well) */}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

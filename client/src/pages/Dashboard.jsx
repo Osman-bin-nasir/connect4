@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { Heart, Globe, Lock } from 'lucide-react';
 import API_URL from '../config';
 
 function Dashboard() {
@@ -201,7 +202,7 @@ function Dashboard() {
                                         }`}
                                 >
                                     <div className="flex items-center justify-center gap-2">
-                                        <span>🌐</span>
+                                        <Globe className="w-5 h-5" />
                                         <span>Public</span>
                                     </div>
                                     <p className="text-xs mt-1 opacity-75">Visible to everyone</p>
@@ -214,7 +215,7 @@ function Dashboard() {
                                         }`}
                                 >
                                     <div className="flex items-center justify-center gap-2">
-                                        <span>🔒</span>
+                                        <Lock className="w-5 h-5" />
                                         <span>Private</span>
                                     </div>
                                     <p className="text-xs mt-1 opacity-75">Only via direct link</p>
@@ -284,9 +285,12 @@ function Dashboard() {
                                     ) : (
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="text-2xl font-bold text-yellow-400">{game.name}</h3>
-                                            <span className={`text-sm px-2 py-1 rounded ${game.isPublic !== false ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                                            <span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 font-medium ${game.isPublic !== false
+                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                                : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                                 }`}>
-                                                {game.isPublic !== false ? '🌐 Public' : '🔒 Private'}
+                                                {game.isPublic !== false ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                                                {game.isPublic !== false ? 'Public' : 'Private'}
                                             </span>
                                         </div>
                                     )}
@@ -298,13 +302,9 @@ function Dashboard() {
                                             <p>Winner: <span className="text-green-400 font-semibold">{game.winner === 'player' ? username : 'The Crowd'}</span></p>
                                         )}
                                         <div className="flex gap-4 mt-2">
-                                            <span className="flex items-center gap-1">
-                                                <span>❤️</span>
-                                                <span className="font-semibold text-red-400">{game.hearts?.length || 0}</span>
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <span>👥</span>
-                                                <span className="font-semibold text-blue-400">{game.uniquePlayers?.length || 0}</span>
+                                            <span className="flex items-center gap-1 font-semibold text-red-400">
+                                                <Heart className="w-4 h-4 fill-red-400" />
+                                                <span>{game.hearts?.length || 0}</span>
                                             </span>
                                         </div>
                                         <p className="text-xs font-mono bg-gray-900 px-2 py-1 rounded">ID: {game._id}</p>
