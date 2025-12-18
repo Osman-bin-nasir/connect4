@@ -7,9 +7,29 @@ const gameTimers = {}; // { gameId: intervalId }
 const gameTimeLeft = {}; // { gameId: seconds } - track current time for sync
 const gameVoters = {}; // { gameId: Set([socketId1, socketId2, ...]) } - track who voted this turn
 
+
+const jwt = require('jsonwebtoken');
+
 module.exports = (io) => {
+
+    // Middleware for socket auth
+    io.use((socket, next) => {
+        const token = socket.handshake.auth.token;
+        if (token) {
+            jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_do_not_use_in_prod', (err, decoded) => {
+                if (err) return next(new Error('Authentication error'));
+                socket.user = decoded;
+                next();
+            });
+        } else {
+            // Allow anonymous connection for Crowd
+            socket.user = null;
+            next();
+        }
+    });
+
     io.on('connection', (socket) => {
-        console.log('User connected:', socket.id);
+        console.log('User connected:', socket.id, socket.user ? `(Auth: ${socket.user.userId})` : '(Guest)');
 
         socket.on('join_game', async ({ gameId, role }) => {
             socket.join(gameId);
@@ -39,13 +59,16 @@ module.exports = (io) => {
             }
         });
 
-        socket.on('make_move', async ({ gameId, col, userId }) => {
+        socket.on('make_move', async ({ gameId, col }) => {
+            // Security: Only authenticated users can move as 'player'
+            if (!socket.user) return;
+
             try {
                 const game = await Game.findById(gameId).populate('singlePlayerId', 'username');
                 if (!game || game.status !== 'active' || game.currentTurn !== 'player') return;
 
-                // Verify user is the single player (optional security check)
-                // if (game.singlePlayerId.toString() !== userId) return;
+                // Strong Security Check: Verify socket user is the game owner
+                if (game.singlePlayerId._id.toString() !== socket.user.userId) return;
 
                 const { success } = makeMove(game.board, col, 1); // 1 = player
                 if (success) {
@@ -53,8 +76,8 @@ module.exports = (io) => {
                     game.moves.push({ col, player: 'player', timestamp: new Date() });
 
                     // Track unique player
-                    if (userId && !game.uniquePlayers.includes(userId)) {
-                        game.uniquePlayers.push(userId);
+                    if (socket.user.userId && !game.uniquePlayers.includes(socket.user.userId)) {
+                        game.uniquePlayers.push(socket.user.userId);
                     }
 
                     const winner = checkWin(game.board);
@@ -115,11 +138,14 @@ module.exports = (io) => {
             });
         });
 
-        socket.on('force_crowd_move', async ({ gameId, userId }) => {
+        socket.on('force_crowd_move', async ({ gameId }) => {
+            // Security limit
+            if (!socket.user) return;
+
             try {
                 const game = await Game.findById(gameId);
                 // Security: only the single player can force move
-                if (!game || game.singlePlayerId.toString() !== userId) return;
+                if (!game || game.singlePlayerId.toString() !== socket.user.userId) return;
 
                 // Only if it's currently crowd's turn (and maybe strictly if infinite time, but generally safe to allow 'finalize now')
                 if (game.currentTurn === 'crowd') {

@@ -24,9 +24,11 @@ function Login() {
             });
 
             // Store user data
-            localStorage.setItem('userId', res.data._id);
-            localStorage.setItem('username', res.data.username);
-            localStorage.setItem('email', res.data.email);
+            const { user, token } = res.data;
+            localStorage.setItem('token', token);
+            localStorage.setItem('userId', user._id);
+            localStorage.setItem('username', user.username);
+            localStorage.setItem('email', user.email);
             localStorage.setItem('isGuest', 'false');
 
             toast.success('Login successful!');

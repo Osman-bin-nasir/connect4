@@ -2,19 +2,22 @@ const express = require('express');
 const router = express.Router();
 const Game = require('../models/Game');
 const User = require('../models/User');
+const authenticateToken = require('../middleware/auth');
 
 // Create a new game
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
     try {
-        const { turnDuration, name, userId, isPublic, crowdName } = req.body;
+        const { turnDuration, name, isPublic, crowdName } = req.body;
+        const userId = req.user.userId;
+
         // fallback to 30 only if undefined, allowing 0
         const duration = (turnDuration !== undefined && turnDuration !== null) ? turnDuration : 30;
         const game = new Game({
             turnDuration: duration,
             name: name || 'Untitled Game',
-            singlePlayerId: userId || null,
+            singlePlayerId: userId,
             crowdName: crowdName || 'The Crowd',
-            status: userId ? 'active' : 'waiting',
+            status: 'active',
             isPublic: isPublic !== undefined ? isPublic : true
         });
         await game.save();
@@ -24,7 +27,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Get leaderboard (Hall of Fame)
+// Get leaderboard (Hall of Fame) - Public
 router.get('/leaderboard', async (req, res) => {
     try {
         const leaderboard = await Game.aggregate([
@@ -61,7 +64,7 @@ router.get('/leaderboard', async (req, res) => {
     }
 });
 
-// Get popular games (Most Loved)
+// Get popular games (Most Loved) - Public
 router.get('/popular', async (req, res) => {
     try {
         const mostLoved = await Game.aggregate([
@@ -106,13 +109,9 @@ router.get('/popular', async (req, res) => {
 });
 
 // Heart a game
-router.post('/:id/heart', async (req, res) => {
+router.post('/:id/heart', authenticateToken, async (req, res) => {
     try {
-        const { userId } = req.body;
-
-        if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
-        }
+        const userId = req.user.userId;
 
         const game = await Game.findById(req.params.id);
         if (!game) return res.status(404).json({ error: 'Game not found' });
@@ -138,13 +137,9 @@ router.post('/:id/heart', async (req, res) => {
 });
 
 // Unheart a game
-router.delete('/:id/heart', async (req, res) => {
+router.delete('/:id/heart', authenticateToken, async (req, res) => {
     try {
-        const { userId } = req.body;
-
-        if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
-        }
+        const userId = req.user.userId;
 
         const game = await Game.findById(req.params.id);
         if (!game) return res.status(404).json({ error: 'Game not found' });
@@ -164,7 +159,7 @@ router.delete('/:id/heart', async (req, res) => {
     }
 });
 
-// Get game state
+// Get game state - Public
 router.get('/:id', async (req, res) => {
     try {
         const game = await Game.findById(req.params.id).populate('singlePlayerId', 'username');
@@ -176,18 +171,23 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Join game (as single player)
-router.post('/:id/join', async (req, res) => {
-    const { userId, role } = req.body; // role: 'player' or 'crowd'
+// Join game (as single player) - Protected
+router.post('/:id/join', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { role } = req.body; // role: 'player' or 'crowd'
     try {
         const game = await Game.findById(req.params.id);
         if (!game) return res.status(404).json({ error: 'Game not found' });
 
         if (role === 'player') {
             if (game.singlePlayerId) {
-                return res.status(400).json({ error: 'Player already joined' });
+                // Ideally check if it's the SAME player returning
+                if (game.singlePlayerId.toString() !== userId) {
+                    return res.status(400).json({ error: 'Player already joined' });
+                }
+            } else {
+                game.singlePlayerId = userId;
             }
-            game.singlePlayerId = userId;
             game.status = 'active';
             await game.save();
         }
@@ -199,9 +199,19 @@ router.post('/:id/join', async (req, res) => {
     }
 });
 
-// Get all games for a user
-router.get('/user/:userId', async (req, res) => {
+// Get all games for a user - Protected (or public if we want to see others' profiles?)
+// Let's keep it specific to the user for the dashboard, so we can use the token.
+// Actually, the current API was `/user/:userId`. If we want to see our own games on dashboard, we can just use `/my-games` or verify token matches.
+// But to minimize frontend changes for now, let's keep the route but ensure security.
+// If I am fetching my own games, I should be authorized.
+// If I am fetching someone else's games (public profile), it should be fine?
+// The dashboard uses it to fetch "My Games".
+router.get('/user/:userId', authenticateToken, async (req, res) => {
     try {
+        // Enforce that you can only fetch your own games for the dashboard "manage" view
+        if (req.params.userId !== req.user.userId) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
         const games = await Game.find({ singlePlayerId: req.params.userId }).sort({ createdAt: -1 });
         res.json(games);
     } catch (err) {
@@ -210,9 +220,10 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 // Rename game / Update game settings
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
     try {
-        const { name, userId, isPublic, crowdName } = req.body;
+        const { name, isPublic, crowdName } = req.body;
+        const userId = req.user.userId;
         const game = await Game.findById(req.params.id);
 
         if (!game) return res.status(404).json({ error: 'Game not found' });
@@ -235,9 +246,9 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete game
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
     try {
-        const { userId } = req.body;
+        const userId = req.user.userId;
         const game = await Game.findById(req.params.id);
 
         if (!game) return res.status(404).json({ error: 'Game not found' });

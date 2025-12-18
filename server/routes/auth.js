@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_do_not_use_in_prod';
 
 // Signup
 router.post('/signup', async (req, res) => {
@@ -32,6 +35,9 @@ router.post('/signup', async (req, res) => {
 
         await user.save();
 
+        // Generate token
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
+
         // Return user without password
         const userResponse = {
             _id: user._id,
@@ -40,7 +46,7 @@ router.post('/signup', async (req, res) => {
             isGuest: user.isGuest
         };
 
-        res.status(201).json(userResponse);
+        res.status(201).json({ user: userResponse, token });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -68,6 +74,9 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        // Generate token
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
+
         // Return user without password
         const userResponse = {
             _id: user._id,
@@ -76,7 +85,7 @@ router.post('/login', async (req, res) => {
             isGuest: user.isGuest
         };
 
-        res.json(userResponse);
+        res.json({ user: userResponse, token });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

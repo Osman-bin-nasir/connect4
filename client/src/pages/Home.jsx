@@ -13,14 +13,20 @@ function Home() {
     const [userId, setUserId] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
     const [popularGames, setPopularGames] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
         const id = localStorage.getItem('userId');
         setUserId(id);
         setIsLoggedIn(!!id);
-        fetchLeaderboard();
-        fetchPopularGames();
+
+        const fetchData = async () => {
+            setIsLoading(true);
+            await Promise.all([fetchLeaderboard(), fetchPopularGames()]);
+            setIsLoading(false);
+        };
+        fetchData();
     }, []);
 
     const fetchLeaderboard = async () => {
@@ -198,7 +204,16 @@ function Home() {
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">Most Loved Games</span>
                     </h2>
 
-                    {popularGames && popularGames.length > 0 ? (
+                    {isLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+                            {[1, 2, 3, 4].map((n) => (
+                                <div key={n} className="bg-gray-800/40 p-5 rounded-xl border border-gray-700 h-32 animate-pulse">
+                                    <div className="h-6 bg-gray-700 rounded w-3/4 mb-2"></div>
+                                    <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : popularGames && popularGames.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
                             {popularGames.slice(0, 6).map(renderGameCard)}
                         </div>
@@ -218,7 +233,13 @@ function Home() {
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">Hall of Fame</span>
                     </h2>
 
-                    {leaderboard.length === 0 ? (
+                    {isLoading ? (
+                        <div className="flex flex-col gap-3 w-full">
+                            {[1, 2, 3].map((n) => (
+                                <div key={n} className="bg-gray-800/40 p-4 rounded-xl border border-gray-700 h-20 animate-pulse"></div>
+                            ))}
+                        </div>
+                    ) : leaderboard.length === 0 ? (
                         <div className="text-center text-gray-500 bg-gray-800/30 p-8 rounded-xl backdrop-blur-sm border border-gray-800">
                             <p>No champions yet. Will you be the first?</p>
                         </div>

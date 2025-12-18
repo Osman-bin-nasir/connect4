@@ -3,6 +3,7 @@
 html,
 body,
 #root {
+    font-synthesis-weight: none;
     height: 100%;
     margin: 0;
     background-color: #111827;

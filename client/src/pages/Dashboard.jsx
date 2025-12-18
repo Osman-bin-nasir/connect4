@@ -36,7 +36,10 @@ function Dashboard() {
         try {
             setIsLoading(true);
             const userId = localStorage.getItem('userId');
-            const res = await axios.get(`${API_URL}/api/games/user/${userId}`);
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/api/games/user/${userId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setGames(res.data);
         } catch (err) {
             console.error('Failed to fetch games', err);
@@ -53,13 +56,14 @@ function Dashboard() {
         }
 
         try {
-            const userId = localStorage.getItem('userId');
+            const token = localStorage.getItem('token');
             const res = await axios.post(`${API_URL}/api/games`, {
                 turnDuration: selectedTime,
                 name: newGameName,
                 crowdName: newCrowdName,
-                userId,
                 isPublic
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             toast.success('Game created!');
@@ -80,10 +84,11 @@ function Dashboard() {
         }
 
         try {
-            const userId = localStorage.getItem('userId');
+            const token = localStorage.getItem('token');
             await axios.put(`${API_URL}/api/games/${gameId}`, {
-                name: editingName,
-                userId
+                name: editingName
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             toast.success('Game renamed!');
@@ -104,9 +109,9 @@ function Dashboard() {
                         onClick={async () => {
                             toast.dismiss(t.id);
                             try {
-                                const userId = localStorage.getItem('userId');
+                                const token = localStorage.getItem('token');
                                 await axios.delete(`${API_URL}/api/games/${gameId}`, {
-                                    data: { userId }
+                                    headers: { Authorization: `Bearer ${token}` }
                                 });
                                 toast.success('Game deleted!');
                                 fetchGames();
@@ -154,6 +159,17 @@ function Dashboard() {
                     >
                         Logout
                     </button>
+                </div>
+
+                {/* Join as Crowd */}
+                <div className="mb-8 bg-gray-800 p-6 rounded-xl border border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold">Join Someone Else's Game</h3>
+                        <p className="text-gray-400 text-sm mt-1">Want to play as part of the crowd instead?</p>
+                    </div>
+                    <Link to="/" className="w-full md:w-auto text-center bg-gray-700 hover:bg-gray-600 text-yellow-500 hover:text-yellow-400 px-6 py-3 md:py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                        Join as Crowd →
+                    </Link>
                 </div>
 
                 {/* Create Game Button */}
@@ -393,13 +409,7 @@ function Dashboard() {
                     )}
                 </div>
 
-                {/* Join as Crowd */}
-                <div className="mt-12 bg-gray-800 p-6 rounded-xl border border-gray-700">
-                    <h3 className="text-xl font-bold mb-4">Join Someone Else's Game</h3>
-                    <Link to="/" className="text-yellow-500 hover:text-yellow-400 font-semibold">
-                        Go to Home to join as Crowd →
-                    </Link>
-                </div>
+
             </div>
         </div>
     );

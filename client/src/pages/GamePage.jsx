@@ -9,7 +9,9 @@ import toast from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid';
 import API_URL from '../config';
 
-const socket = io(API_URL);
+const socket = io(API_URL, {
+    autoConnect: false
+});
 
 function GamePage() {
     const { gameId } = useParams();
@@ -40,6 +42,15 @@ function GamePage() {
             localStorage.setItem('crowdUserId', cId);
         }
         setCrowdUserId(cId);
+
+        // Socket Auth
+        const token = localStorage.getItem('token');
+        if (token) {
+            socket.auth = { token };
+        } else {
+            socket.auth = {};
+        }
+        socket.connect();
 
         // If we have a gameId from URL, join it
         if (gameId) {
@@ -73,6 +84,7 @@ function GamePage() {
             socket.off('game_state');
             socket.off('vote_update');
             socket.off('timer_sync');
+            socket.disconnect();
         };
     }, [gameId]);
 
@@ -130,7 +142,7 @@ function GamePage() {
         if (!game || isReplaying) return; // Block moves during replay
 
         if (role === 'player' && game.currentTurn === 'player') {
-            socket.emit('make_move', { gameId: game._id, col, userId });
+            socket.emit('make_move', { gameId: game._id, col });
         } else if (role === 'crowd' && game.currentTurn === 'crowd') {
             socket.emit('cast_vote', { gameId: game._id, col, crowdUserId });
         }
@@ -138,7 +150,7 @@ function GamePage() {
 
     const handleForceMove = () => {
         if (game && role === 'player') {
-            socket.emit('force_crowd_move', { gameId: game._id, userId });
+            socket.emit('force_crowd_move', { gameId: game._id });
         }
     };
 
@@ -152,10 +164,11 @@ function GamePage() {
         }
 
         try {
+            const token = localStorage.getItem('token');
             if (isHearted) {
                 // Unheart
                 await axios.delete(`${API_URL}/api/games/${gameId}/heart`, {
-                    data: { userId }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
                 setIsHearted(false);
                 toast.success('Removed from favorites');
@@ -168,7 +181,9 @@ function GamePage() {
                 }
             } else {
                 // Heart
-                await axios.post(`${API_URL}/api/games/${gameId}/heart`, { userId });
+                await axios.post(`${API_URL}/api/games/${gameId}/heart`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 setIsHearted(true);
                 toast.success('Added to favorites!', { icon: '❤️' });
                 // Update game hearts count
@@ -196,9 +211,11 @@ function GamePage() {
         }
 
         try {
+            const token = localStorage.getItem('token');
             const res = await axios.put(`${API_URL}/api/games/${gameId}`, {
-                crowdName: tempCrowdName.trim(),
-                userId
+                crowdName: tempCrowdName.trim()
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
             setGame(res.data);
             setIsEditingCrowdName(false);
@@ -249,10 +266,46 @@ function GamePage() {
 
     if (!game) {
         return (
-            <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-                    <p className="text-gray-400">Loading game...</p>
+            <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-8 font-sans">
+                {/* Header Skeleton */}
+                <div className="mb-4 w-full flex justify-between items-center px-4 max-w-2xl">
+                    <div className="h-9 w-32 bg-gray-800 rounded animate-pulse"></div>
+                    <div className="flex gap-2">
+                        <div className="h-9 w-20 bg-gray-800 rounded animate-pulse"></div>
+                        <div className="h-9 w-36 bg-gray-800 rounded animate-pulse"></div>
+                    </div>
+                </div>
+
+                {/* Legend Skeleton */}
+                <div className="mb-6 flex justify-center gap-6 text-sm">
+                    <div className="h-10 w-40 min-h-[2.5rem] bg-gray-800 rounded-lg animate-pulse border border-transparent px-4"></div>
+                    <div className="h-10 w-40 min-h-[2.5rem] bg-gray-800 rounded-lg animate-pulse border border-transparent px-4"></div>
+                </div>
+
+                {/* Title/Turn Skeleton */}
+                <div className="mb-8 flex flex-col items-center gap-2 px-4">
+                    <div className="w-full max-w-xl flex justify-center">
+                        <div className="h-10 w-full max-w-xl bg-gray-800 rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-6 w-full flex justify-center">
+                        <div className="h-6 w-32 bg-gray-800 rounded animate-pulse"></div>
+                    </div>
+                </div>
+
+                {/* Board Skeleton - Matches typical board aspect ratio */}
+                <div className="w-full max-w-xl p-4">
+                    <div className="aspect-[7/6] bg-blue-900/20 rounded-xl border-4 border-blue-900 p-2 grid grid-cols-7 gap-1 md:gap-2">
+                        {Array(42).fill(0).map((_, i) => (
+                            <div key={i} className="aspect-square bg-gray-800/50 rounded-full animate-pulse"></div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Footer Skeleton */}
+                <div className="mt-12 flex flex-col items-center gap-2">
+                    <div className="h-4 w-40 bg-gray-800 rounded animate-pulse"></div>
+                    <div className="h-6 w-24 bg-gray-800 rounded animate-pulse"></div>
+                    <div className="h-4 w-32 bg-gray-800 rounded animate-pulse"></div>
                 </div>
             </div>
         );
@@ -276,7 +329,7 @@ function GamePage() {
             <div className="mb-4 w-full flex justify-between items-center px-4 max-w-2xl text-gray-400 text-sm">
                 <button
                     onClick={() => navigate('/dashboard')}
-                    className="hover:text-white transition-colors flex items-center gap-1"
+                    className="h-9 hover:text-white transition-colors flex items-center gap-1 font-medium px-2 -ml-2 rounded-lg hover:bg-gray-800"
                 >
                     <ArrowLeft className="w-5 h-5" />
                     Back to Dashboard
@@ -284,7 +337,7 @@ function GamePage() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={handleHeartClick}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border ${isHearted
+                        className={`h-9 min-w-[5rem] justify-center flex items-center gap-2 px-3 rounded-lg transition-all border ${isHearted
                             ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30'
                             : 'bg-gray-700/50 hover:bg-gray-700 text-gray-400 border-gray-600/30'
                             }`}
@@ -295,7 +348,7 @@ function GamePage() {
                     </button>
                     <button
                         onClick={handleShare}
-                        className="flex items-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-lg transition-colors border border-yellow-500/30"
+                        className="h-9 min-w-[9rem] justify-center flex items-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-3 rounded-lg transition-colors border border-yellow-500/30"
                     >
                         <Share2 className="w-4 h-4" />
                         <span>Invite Crowd</span>
@@ -304,20 +357,21 @@ function GamePage() {
             </div>
 
             {/* Color Legend */}
+            {/* Color Legend */}
             <div className="mb-6 flex justify-center gap-6 text-sm">
-                <div className="flex items-center gap-2 bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
-                    <div className="w-6 h-6 rounded bg-red-500"></div>
-                    <span className="text-gray-300">{playerName}</span>
+                <div className="w-40 h-10 min-h-[2.5rem] flex items-center justify-start gap-2 bg-gray-800/50 px-4 rounded-lg border border-gray-700">
+                    <div className="w-6 h-6 rounded bg-red-500 shrink-0"></div>
+                    <span className="text-gray-300 truncate block w-[6.5rem] text-left">{playerName}</span>
                 </div>
-                <div className="flex items-center gap-2 bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
-                    <div className="w-6 h-6 rounded bg-yellow-400"></div>
-                    {isEditingCrowdName ? (
-                        <div className="flex items-center gap-1">
+                <div className="w-40 h-10 min-h-[2.5rem] flex items-center justify-start gap-2 bg-gray-800/50 px-4 rounded-lg border border-gray-700">
+                    <div className="w-6 h-6 rounded bg-yellow-400 shrink-0"></div>
+                    <div className="w-[6.5rem] h-6 flex items-center">
+                        {isEditingCrowdName ? (
                             <input
                                 type="text"
                                 value={tempCrowdName}
                                 onChange={(e) => setTempCrowdName(e.target.value)}
-                                className="bg-gray-700 text-white px-2 py-0.5 rounded border border-gray-600 focus:outline-none focus:border-yellow-500 w-32"
+                                className="w-full h-6 bg-gray-700 text-white px-2 rounded text-sm focus:outline-none focus:border-yellow-500"
                                 autoFocus
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleCrowdNameUpdate();
@@ -326,28 +380,23 @@ function GamePage() {
                                         setIsEditingCrowdName(false);
                                     }
                                 }}
+                                onBlur={() => {
+                                    setTempCrowdName(game.crowdName || 'The Crowd');
+                                    setIsEditingCrowdName(false);
+                                }}
                             />
-                            <button onClick={handleCrowdNameUpdate} className="text-green-400 hover:text-green-300">
-                                <Check className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => {
-                                setTempCrowdName(game.crowdName || 'The Crowd');
-                                setIsEditingCrowdName(false);
-                            }} className="text-red-400 hover:text-red-300">
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ) : (
-                        <span
-                            className={`text-gray-300 ${role === 'player' ? 'cursor-pointer hover:text-yellow-400 hover:underline decoration-dashed underline-offset-4' : ''}`}
-                            onDoubleClick={() => {
-                                if (role === 'player') setIsEditingCrowdName(true);
-                            }}
-                            title={role === 'player' ? "Double click to rename" : ""}
-                        >
-                            {crowdName}
-                        </span>
-                    )}
+                        ) : (
+                            <span
+                                className={`text-gray-300 truncate block w-full text-left ${role === 'player' ? 'cursor-pointer hover:text-yellow-400 hover:underline decoration-dashed underline-offset-4' : ''}`}
+                                onDoubleClick={() => {
+                                    if (role === 'player') setIsEditingCrowdName(true);
+                                }}
+                                title={role === 'player' ? "Double click to rename" : ""}
+                            >
+                                {crowdName}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -393,20 +442,25 @@ function GamePage() {
                 </div>
             )}
 
-            <div className="mb-8 text-center px-4">
-                <h1 className="text-2xl md:text-4xl font-bold mb-2">
-                    {game.status === 'completed'
-                        ? <span className="text-green-400">Winner: {game.winner === 'player' ? playerName : crowdName}</span>
-                        : <span className={game.currentTurn === 'player' ? 'text-red-500' : 'text-yellow-500'}>
-                            Turn: {game.currentTurn === 'player' ? playerName : crowdName}
-                        </span>
-                    }
-                </h1>
-                {game.status !== 'completed' && (
-                    <p className="text-gray-400 animate-pulse">
+            <div className="mb-8 flex flex-col items-center gap-2 px-4">
+                <div className="w-full max-w-xl flex justify-center">
+                    <h1 className="text-2xl md:text-4xl h-10 w-full max-w-xl flex items-center justify-center text-center whitespace-nowrap font-bold">
+                        {game.status === 'completed'
+                            ? <span className="text-green-400">Winner: {game.winner === 'player' ? playerName : crowdName}</span>
+                            : <span className={game.currentTurn === 'player' ? 'text-red-500' : 'text-yellow-500'}>
+                                Turn: {game.currentTurn === 'player' ? playerName : crowdName}
+                            </span>
+                        }
+                    </h1>
+                </div>
+                <div className="h-6 w-full flex justify-center">
+                    <p
+                        className={`h-6 flex items-center justify-center text-gray-400 transition-opacity duration-300 ${game.status !== 'completed' ? 'opacity-100 animate-pulse' : 'opacity-0'
+                            }`}
+                    >
                         {isMyTurn ? "Your Turn!" : "Waiting..."}
                     </p>
-                )}
+                </div>
             </div>
 
             {timer !== null && game.currentTurn === 'crowd' && game.status !== 'completed' && (
@@ -428,11 +482,13 @@ function GamePage() {
                 </div>
             )}
 
-            <Board
-                board={displayBoard}
-                onColumnClick={handleColumnClick}
-                votes={role === 'crowd' && !isReplaying ? votes : null}
-            />
+            <div className="min-h-[420px]">
+                <Board
+                    board={displayBoard}
+                    onColumnClick={handleColumnClick}
+                    votes={role === 'crowd' && !isReplaying ? votes : null}
+                />
+            </div>
 
             <div className="mt-12 text-center text-gray-500">
                 <p>You are playing as: <span className={`font-bold uppercase ${role === 'player' ? 'text-red-500' : 'text-yellow-500'}`}>{role}</span></p>
