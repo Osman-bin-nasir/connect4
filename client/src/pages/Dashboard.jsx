@@ -297,9 +297,9 @@ function Dashboard() {
 
                                     <div className="space-y-2 text-sm text-gray-400 mb-4">
                                         <p>Status: <span className="capitalize font-semibold">{game.status}</span></p>
-                                        <p>Turn: <span className="font-semibold">{game.currentTurn === 'player' ? username : 'The Crowd'}</span></p>
+                                        <p>Turn: <span className="font-semibold">{game.currentTurn === 'player' ? username : (game.crowdName || 'The Crowd')}</span></p>
                                         {game.winner && (
-                                            <p>Winner: <span className="text-green-400 font-semibold">{game.winner === 'player' ? username : 'The Crowd'}</span></p>
+                                            <p>Winner: <span className="text-green-400 font-semibold">{game.winner === 'player' ? username : (game.crowdName || 'The Crowd')}</span></p>
                                         )}
                                         <div className="flex gap-4 mt-2">
                                             <span className="flex items-center gap-1 font-semibold text-red-400">
