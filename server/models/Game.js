@@ -3,20 +3,23 @@ const mongoose = require('mongoose');
 const gameSchema = new mongoose.Schema({
     name: { type: String, default: 'Untitled Game' },
     status: { type: String, enum: ['waiting', 'active', 'completed'], default: 'waiting' },
+    gameMode: { type: String, enum: ['crowd', '1v1', 'ai'], default: 'crowd' }, // Game type
     singlePlayerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    player2Id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // For 1v1 mode
     crowdId: { type: String, default: 'crowd' },
     crowdName: { type: String, default: 'The Crowd' },
+    aiDifficulty: { type: Number, min: 1, max: 6, default: 3 }, // AI minimax depth (1=easy, 6=hard)
     turnDuration: { type: Number, default: 30 }, // Seconds. 0 for infinite.
-    // 6 rows, 7 columns. 0=empty, 1=player, 2=crowd
+    // 6 rows, 7 columns. 0=empty, 1=player/player1, 2=crowd/player2/ai
     board: {
         type: [[Number]],
         default: () => Array(6).fill().map(() => Array(7).fill(0))
     },
-    currentTurn: { type: String, enum: ['player', 'crowd'], default: 'player' },
-    winner: { type: String, enum: ['player', 'crowd', 'draw', null], default: null },
+    currentTurn: { type: String, enum: ['player', 'player2', 'crowd', 'ai'], default: 'player' },
+    winner: { type: String, enum: ['player', 'player2', 'crowd', 'ai', 'draw', null], default: null },
     moves: [{
         col: { type: Number, required: true },
-        player: { type: String, enum: ['player', 'crowd'], required: true },
+        player: { type: String, enum: ['player', 'player2', 'crowd', 'ai'], required: true },
         timestamp: { type: Date, default: Date.now }
     }],
     // Community features

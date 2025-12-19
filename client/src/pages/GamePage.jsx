@@ -108,21 +108,63 @@ function GamePage() {
     const loadGame = async (gId, uId) => {
         try {
             const res = await axios.get(`${API_URL}/api/games/${gId}`);
-            const loadedGame = res.data;
+            let loadedGame = res.data;
 
-            // Determine role: if user is the player, set role as player, otherwise crowd
-            // Handle populated singlePlayerId (object) or raw ID
+            // Determine role based on game mode
             const spId = loadedGame.singlePlayerId;
             const spIdString = (spId && typeof spId === 'object') ? spId._id.toString() : spId?.toString();
 
-            if (spIdString && spIdString === uId) {
-                socket.emit('join_game', { gameId: gId, role: 'player' });
-                setRole('player');
-            } else {
-                // Crowd joining
-                socket.emit('join_game', { gameId: gId, role: 'crowd' });
-                setRole('crowd');
+            let userRole = 'crowd'; // default
+
+            if (loadedGame.gameMode === '1v1') {
+                // Check if user is player1 or player2
+                const p2Id = loadedGame.player2Id;
+                const p2IdString = (p2Id && typeof p2Id === 'object') ? p2Id._id.toString() : p2Id?.toString();
+
+                if (spIdString && spIdString === uId) {
+                    userRole = 'player';
+                } else if (p2IdString && p2IdString === uId) {
+                    userRole = 'player2';
+                } else if (!p2Id && uId) {
+                    // Auto-join as player2 if:
+                    // 1. No player2 exists yet
+                    // 2. User is logged in
+                    // 3. User is not player1
+                    try {
+                        const token = localStorage.getItem('token');
+                        const joinRes = await axios.post(
+                            `${API_URL}/api/games/${gId}/join`,
+                            { role: 'player2' },
+                            { headers: { Authorization: `Bearer ${token}` } }
+                        );
+                        loadedGame = joinRes.data; // Update with joined game
+                        userRole = 'player2';
+                        toast.success('Joined game as Player 2!');
+                    } catch (joinErr) {
+                        console.error('Failed to join as player2:', joinErr);
+                        // If join fails, become spectator
+                        userRole = 'spectator';
+                    }
+                } else {
+                    userRole = 'spectator'; // Watching a 1v1 game (player2 already exists)
+                }
+            } else if (loadedGame.gameMode === 'ai') {
+                // Only the game owner can play in AI mode
+                if (spIdString && spIdString === uId) {
+                    userRole = 'player';
+                } else {
+                    userRole = 'spectator';
+                }
+            } else { // crowd mode
+                if (spIdString && spIdString === uId) {
+                    userRole = 'player';
+                } else {
+                    userRole = 'crowd';
+                }
             }
+
+            socket.emit('join_game', { gameId: gId, role: userRole });
+            setRole(userRole);
 
             // Check if user has hearted this game
             if (uId && loadedGame.hearts) {
@@ -141,10 +183,25 @@ function GamePage() {
     const handleColumnClick = (col) => {
         if (!game || isReplaying) return; // Block moves during replay
 
-        if (role === 'player' && game.currentTurn === 'player') {
-            socket.emit('make_move', { gameId: game._id, col });
-        } else if (role === 'crowd' && game.currentTurn === 'crowd') {
-            socket.emit('cast_vote', { gameId: game._id, col, crowdUserId });
+        const gameMode = game.gameMode || 'crowd';
+
+        // Handle different game modes
+        if (gameMode === 'crowd') {
+            if (role === 'player' && game.currentTurn === 'player') {
+                socket.emit('make_move', { gameId: game._id, col });
+            } else if (role === 'crowd' && game.currentTurn === 'crowd') {
+                socket.emit('cast_vote', { gameId: game._id, col, crowdUserId });
+            }
+        } else if (gameMode === '1v1') {
+            if (role === 'player' && game.currentTurn === 'player') {
+                socket.emit('make_move', { gameId: game._id, col });
+            } else if (role === 'player2' && game.currentTurn === 'player2') {
+                socket.emit('make_move', { gameId: game._id, col });
+            }
+        } else if (gameMode === 'ai') {
+            if (role === 'player' && game.currentTurn === 'player') {
+                socket.emit('make_move', { gameId: game._id, col });
+            }
         }
     };
 
@@ -331,7 +388,11 @@ function GamePage() {
         );
     }
 
-    const isMyTurn = (role === 'player' && game.currentTurn === 'player') || (role === 'crowd' && game.currentTurn === 'crowd');
+    const isMyTurn = (
+        (role === 'player' && game.currentTurn === 'player') ||
+        (role === 'player2' && game.currentTurn === 'player2') ||
+        (role === 'crowd' && game.currentTurn === 'crowd')
+    );
 
     // Determine which board to display
     const displayBoard = isReplaying
@@ -340,9 +401,21 @@ function GamePage() {
 
     const hasHistory = game.moves && game.moves.length > 0;
 
+    // Get player names based on game mode
     const spId = game.singlePlayerId;
-    const playerName = (spId && typeof spId === 'object') ? spId.username : 'The One';
-    const crowdName = game.crowdName || 'The Crowd';
+    const player1Name = (spId && typeof spId === 'object') ? spId.username : 'Player 1';
+
+    const gameMode = game.gameMode || 'crowd';
+    let player2Name = 'Player 2';
+
+    if (gameMode === 'crowd') {
+        player2Name = game.crowdName || 'The Crowd';
+    } else if (gameMode === '1v1') {
+        const p2Id = game.player2Id;
+        player2Name = (p2Id && typeof p2Id === 'object') ? p2Id.username : 'Player 2';
+    } else if (gameMode === 'ai') {
+        player2Name = 'AI';
+    }
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-8 font-sans">
@@ -377,16 +450,15 @@ function GamePage() {
             </div>
 
             {/* Color Legend */}
-            {/* Color Legend */}
             <div className="mb-6 flex justify-center gap-6 text-sm">
-                <div className="w-40 h-10 min-h-[2.5rem] flex items-center justify-start gap-2 bg-gray-800/50 px-4 rounded-lg border border-gray-700">
+                <div className="w-40 h-10 min-h-[2.5rem] flex items-center just ify-start gap-2 bg-gray-800/50 px-4 rounded-lg border border-gray-700">
                     <div className="w-6 h-6 rounded bg-red-500 shrink-0"></div>
-                    <span className="text-gray-300 truncate block w-[6.5rem] text-left">{playerName}</span>
+                    <span className="text-gray-300 truncate block w-[6.5rem] text-left">{player1Name}</span>
                 </div>
                 <div className="w-40 h-10 min-h-[2.5rem] flex items-center justify-start gap-2 bg-gray-800/50 px-4 rounded-lg border border-gray-700">
                     <div className="w-6 h-6 rounded bg-yellow-400 shrink-0"></div>
                     <div className="w-[6.5rem] h-6 flex items-center">
-                        {isEditingCrowdName ? (
+                        {isEditingCrowdName && gameMode === 'crowd' ? (
                             <input
                                 type="text"
                                 value={tempCrowdName}
@@ -407,13 +479,16 @@ function GamePage() {
                             />
                         ) : (
                             <span
-                                className={`text-gray-300 truncate block w-full text-left ${role === 'player' ? 'cursor-pointer hover:text-yellow-400 hover:underline decoration-dashed underline-offset-4' : ''}`}
+                                className={`text-gray-300 truncate block w-full text-left ${role === 'player' && gameMode === 'crowd'
+                                    ? 'cursor-pointer hover:text-yellow-400 hover:underline decoration-dashed underline-offset-4'
+                                    : ''
+                                    }`}
                                 onDoubleClick={() => {
-                                    if (role === 'player') setIsEditingCrowdName(true);
+                                    if (role === 'player' && gameMode === 'crowd') setIsEditingCrowdName(true);
                                 }}
-                                title={role === 'player' ? "Double click to rename" : ""}
+                                title={role === 'player' && gameMode === 'crowd' ? "Double click to rename" : ""}
                             >
-                                {crowdName}
+                                {player2Name}
                             </span>
                         )}
                     </div>
@@ -466,9 +541,23 @@ function GamePage() {
                 <div className="w-full max-w-xl flex justify-center">
                     <h1 className="text-2xl md:text-4xl h-10 w-full max-w-xl flex items-center justify-center text-center whitespace-nowrap font-bold">
                         {game.status === 'completed'
-                            ? <span className="text-green-400">Winner: {game.winner === 'player' ? playerName : crowdName}</span>
-                            : <span className={game.currentTurn === 'player' ? 'text-red-500' : 'text-yellow-500'}>
-                                Turn: {game.currentTurn === 'player' ? playerName : crowdName}
+                            ? <span className="text-green-400">
+                                Winner: {game.winner === 'player' ? player1Name :
+                                    game.winner === 'player2' ? player2Name :
+                                        game.winner === 'ai' ? 'AI' :
+                                            game.winner === 'crowd' ? player2Name :
+                                                'Draw'}
+                            </span>
+                            : <span className={
+                                game.currentTurn === 'player' ? 'text-red-500' :
+                                    game.currentTurn === 'player2' ? 'text-blue-400' :
+                                        game.currentTurn === 'ai' ? 'text-purple-400' :
+                                            'text-yellow-500'
+                            }>
+                                Turn: {game.currentTurn === 'player' ? player1Name :
+                                    game.currentTurn === 'player2' ? player2Name :
+                                        game.currentTurn === 'ai' ? '🤖 AI (thinking...)' :
+                                            player2Name}
                             </span>
                         }
                     </h1>
@@ -483,7 +572,8 @@ function GamePage() {
                 </div>
             </div>
 
-            {timer !== null && game.currentTurn === 'crowd' && game.status !== 'completed' && (
+            {/* Only show timer and voting for crowd mode */}
+            {gameMode === 'crowd' && timer !== null && game.currentTurn === 'crowd' && game.status !== 'completed' && (
                 <div className="text-3xl font-mono text-yellow-400 mb-6 bg-gray-800 px-4 py-2 rounded-lg border border-yellow-500/30 flex flex-col items-center gap-2">
                     <span>
                         {timer === 'infinite' ? '∞ Infinite Time' : `Time Left: ${timer}s`}
@@ -506,7 +596,7 @@ function GamePage() {
                 <Board
                     board={displayBoard}
                     onColumnClick={handleColumnClick}
-                    votes={role === 'crowd' && !isReplaying ? votes : null}
+                    votes={role === 'crowd' && gameMode === 'crowd' && !isReplaying ? votes : null}
                 />
             </div>
 

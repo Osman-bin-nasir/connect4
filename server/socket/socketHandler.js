@@ -1,5 +1,6 @@
 const Game = require('../models/Game');
 const { checkWin, checkDraw, makeMove } = require('../utils/gameLogic');
+const { getBestMove } = require('../utils/aiPlayer');
 
 // In-memory storage
 const gameVotes = {}; // { gameId: { col0: 5, col1: 2 } }
@@ -35,7 +36,9 @@ module.exports = (io) => {
             socket.join(gameId);
             console.log(`User ${socket.id} joined game ${gameId} as ${role}`);
 
-            const game = await Game.findById(gameId).populate('singlePlayerId', 'username');
+            const game = await Game.findById(gameId)
+                .populate('singlePlayerId', 'username')
+                .populate('player2Id', 'username');
             if (game) {
                 socket.emit('game_state', game);
                 // If crowd turn, send current timer/votes?
@@ -60,20 +63,58 @@ module.exports = (io) => {
         });
 
         socket.on('make_move', async ({ gameId, col }) => {
-            // Security: Only authenticated users can move as 'player'
+            // Security: Only authenticated users can make moves
             if (!socket.user) return;
 
             try {
-                const game = await Game.findById(gameId).populate('singlePlayerId', 'username');
-                if (!game || game.status !== 'active' || game.currentTurn !== 'player') return;
+                const game = await Game.findById(gameId)
+                    .populate('singlePlayerId', 'username')
+                    .populate('player2Id', 'username');
+                if (!game || game.status !== 'active') return;
 
-                // Strong Security Check: Verify socket user is the game owner
-                if (game.singlePlayerId._id.toString() !== socket.user.userId) return;
+                // Determine which player is making the move
+                let playerValue, playerLabel, nextTurn;
 
-                const { success } = makeMove(game.board, col, 1); // 1 = player
+                if (game.gameMode === 'crowd') {
+                    // Original crowd mode logic
+                    if (game.currentTurn !== 'player') return;
+                    if (game.singlePlayerId._id.toString() !== socket.user.userId) return;
+
+                    playerValue = 1;
+                    playerLabel = 'player';
+                    nextTurn = 'crowd';
+                } else if (game.gameMode === '1v1') {
+                    // 1v1 mode logic
+                    const isPlayer1 = game.singlePlayerId._id.toString() === socket.user.userId;
+                    const isPlayer2 = game.player2Id && game.player2Id._id.toString() === socket.user.userId;
+
+                    if (game.currentTurn === 'player' && isPlayer1) {
+                        playerValue = 1;
+                        playerLabel = 'player';
+                        nextTurn = 'player2';
+                    } else if (game.currentTurn === 'player2' && isPlayer2) {
+                        playerValue = 2;
+                        playerLabel = 'player2';
+                        nextTurn = 'player';
+                    } else {
+                        return; // Not this player's turn
+                    }
+                } else if (game.gameMode === 'ai') {
+                    // AI mode logic
+                    if (game.currentTurn !== 'player') return;
+                    if (game.singlePlayerId._id.toString() !== socket.user.userId) return;
+
+                    playerValue = 1;
+                    playerLabel = 'player';
+                    nextTurn = 'ai';
+                } else {
+                    return;
+                }
+
+                const { success } = makeMove(game.board, col, playerValue);
                 if (success) {
                     // Record the move for replay
-                    game.moves.push({ col, player: 'player', timestamp: new Date() });
+                    game.moves.push({ col, player: playerLabel, timestamp: new Date() });
 
                     // Track unique player
                     if (socket.user.userId && !game.uniquePlayers.includes(socket.user.userId)) {
@@ -82,18 +123,27 @@ module.exports = (io) => {
 
                     const winner = checkWin(game.board);
                     if (winner) {
-                        game.winner = 'player';
+                        game.winner = playerLabel;
                         game.status = 'completed';
                     } else if (checkDraw(game.board)) {
                         game.winner = 'draw';
                         game.status = 'completed';
                     } else {
-                        game.currentTurn = 'crowd';
-                        startCrowdTimer(io, gameId);
+                        game.currentTurn = nextTurn;
+
+                        // Start crowd timer if next turn is crowd
+                        if (nextTurn === 'crowd') {
+                            startCrowdTimer(io, gameId);
+                        }
                     }
                     game.markModified('board');
                     const savedGame = await game.save();
                     io.to(gameId).emit('game_state', savedGame);
+
+                    // Trigger AI move if AI's turn
+                    if (game.gameMode === 'ai' && nextTurn === 'ai' && game.status === 'active') {
+                        handleAIMove(io, gameId);
+                    }
                 }
             } catch (err) {
                 console.error(err);
@@ -278,5 +328,44 @@ async function resolveCrowdTurn(io, gameId) {
         }
     } catch (err) {
         console.error("Error resolving crowd turn:", err);
+    }
+}
+
+// Handle AI move with slight delay for better UX
+async function handleAIMove(io, gameId) {
+    try {
+        // Slight delay so player sees their move first
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const game = await Game.findById(gameId).populate('singlePlayerId', 'username');
+        if (!game || game.status !== 'active' || game.currentTurn !== 'ai') return;
+
+        // Get AI's best move
+        const aiCol = getBestMove(game.board, game.aiDifficulty);
+
+        if (aiCol === null) return; // No valid moves
+
+        const { success } = makeMove(game.board, aiCol, 2); // 2 = AI
+        if (success) {
+            // Record the move
+            game.moves.push({ col: aiCol, player: 'ai', timestamp: new Date() });
+
+            const winner = checkWin(game.board);
+            if (winner) {
+                game.winner = 'ai';
+                game.status = 'completed';
+            } else if (checkDraw(game.board)) {
+                game.winner = 'draw';
+                game.status = 'completed';
+            } else {
+                game.currentTurn = 'player';
+            }
+
+            game.markModified('board');
+            const savedGame = await game.save();
+            io.to(gameId).emit('game_state', savedGame);
+        }
+    } catch (err) {
+        console.error('AI move error:', err);
     }
 }

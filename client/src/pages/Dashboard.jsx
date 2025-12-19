@@ -4,6 +4,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Heart, Globe, Lock, Users, Clock, Zap } from 'lucide-react';
 import API_URL from '../config';
+import GameModeSelector from '../components/GameModeSelector';
 
 function Dashboard() {
     const [games, setGames] = useState([]);
@@ -14,6 +15,8 @@ function Dashboard() {
     const [newCrowdName, setNewCrowdName] = useState('The Crowd');
     const [selectedTime, setSelectedTime] = useState(30);
     const [isPublic, setIsPublic] = useState(true);
+    const [gameMode, setGameMode] = useState('crowd');
+    const [aiDifficulty, setAiDifficulty] = useState(3);
     const [editingId, setEditingId] = useState(null);
     const [editingName, setEditingName] = useState('');
     const navigate = useNavigate();
@@ -57,23 +60,38 @@ function Dashboard() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`${API_URL}/api/games`, {
+            const gameData = {
                 turnDuration: selectedTime,
                 name: newGameName,
-                crowdName: newCrowdName,
-                isPublic
-            }, {
+                isPublic,
+                gameMode
+            };
+
+            // Add mode-specific data
+            if (gameMode === 'crowd') {
+                gameData.crowdName = newCrowdName;
+            } else if (gameMode === 'ai') {
+                gameData.aiDifficulty = aiDifficulty;
+            }
+
+            const res = await axios.post(`${API_URL}/api/games`, gameData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            toast.success('Game created!');
+            const successMessage = gameMode === '1v1'
+                ? 'Game created! Waiting for opponent...'
+                : 'Game created!';
+            toast.success(successMessage);
+
             setIsCreating(false);
             setNewGameName('');
             setNewCrowdName('The Crowd');
-            setIsPublic(true); // Reset to default
+            setIsPublic(true);
+            setGameMode('crowd');
+            setAiDifficulty(3);
             navigate(`/game/${res.data._id}`);
         } catch (err) {
-            toast.error('Failed to create game');
+            toast.error('Failed to create game ');
         }
     };
 
@@ -188,6 +206,14 @@ function Dashboard() {
                             Configure New Game
                         </h2>
 
+                        {/* Game Mode Selector */}
+                        <div className="mb-6">
+                            <GameModeSelector
+                                selectedMode={gameMode}
+                                onModeChange={setGameMode}
+                            />
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <div className="space-y-2">
                                 <label className="block text-sm font-semibold text-gray-400">Game Name</label>
@@ -199,19 +225,45 @@ function Dashboard() {
                                     placeholder="e.g. My Epic Game"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="block text-sm font-semibold text-gray-400">Crowd Name</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={newCrowdName}
-                                        onChange={(e) => setNewCrowdName(e.target.value)}
-                                        className="w-full bg-gray-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-gray-600 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 outline-none transition-all"
-                                        placeholder="The Crowd"
-                                    />
-                                    <Users className="w-5 h-5 text-gray-500 absolute left-3 top-3.5" />
+
+                            {/* Crowd Name - only for crowd mode */}
+                            {gameMode === 'crowd' && (
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-gray-400">Crowd Name</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={newCrowdName}
+                                            onChange={(e) => setNewCrowdName(e.target.value)}
+                                            className="w-full bg-gray-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-gray-600 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 outline-none transition-all"
+                                            placeholder="The Crowd"
+                                        />
+                                        <Users className="w-5 h-5 text-gray-500 absolute left-3 top-3.5" />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {/* AI Difficulty - only for AI mode */}
+                            {gameMode === 'ai' && (
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-gray-400">
+                                        AI Difficulty: {['Easy', 'Medium', 'Hard'][Math.floor((aiDifficulty - 1) / 2)]}
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="6"
+                                        value={aiDifficulty}
+                                        onChange={(e) => setAiDifficulty(Number(e.target.value))}
+                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                    />
+                                    <div className="flex justify-between text-xs text-gray-500">
+                                        <span>Easy</span>
+                                        <span>Medium</span>
+                                        <span>Hard</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -353,15 +405,27 @@ function Dashboard() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h3 className="text-2xl font-bold text-yellow-400">{game.name}</h3>
-                                            <span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 font-medium ${game.isPublic !== false
-                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                                : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                                }`}>
-                                                {game.isPublic !== false ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                                                {game.isPublic !== false ? 'Public' : 'Private'}
-                                            </span>
+                                        <div className="flex items-center justify-between mb-3 gap-2">
+                                            <h3 className="text-2xl font-bold text-yellow-400 flex-1">{game.name}</h3>
+                                            <div className="flex gap-2">
+                                                {/* Game Mode Badge */}
+                                                <span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 font-medium ${game.gameMode === 'ai'
+                                                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                                                        : game.gameMode === '1v1'
+                                                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                            : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                                                    }`}>
+                                                    {game.gameMode === 'ai' ? '🤖 AI' : game.gameMode === '1v1' ? '👥 1v1' : '🎭 Crowd'}
+                                                </span>
+                                                {/* Visibility Badge */}
+                                                <span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 font-medium ${game.isPublic !== false
+                                                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                                    : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                    }`}>
+                                                    {game.isPublic !== false ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                                                    {game.isPublic !== false ? 'Public' : 'Private'}
+                                                </span>
+                                            </div>
                                         </div>
                                     )}
 

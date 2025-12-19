@@ -7,19 +7,34 @@ const authenticateToken = require('../middleware/auth');
 // Create a new game
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const { turnDuration, name, isPublic, crowdName } = req.body;
+        const { turnDuration, name, isPublic, crowdName, gameMode, aiDifficulty } = req.body;
         const userId = req.user.userId;
 
         // fallback to 30 only if undefined, allowing 0
         const duration = (turnDuration !== undefined && turnDuration !== null) ? turnDuration : 30;
-        const game = new Game({
+
+        const gameData = {
             turnDuration: duration,
             name: name || 'Untitled Game',
             singlePlayerId: userId,
             crowdName: crowdName || 'The Crowd',
-            status: 'active',
+            gameMode: gameMode || 'crowd',
             isPublic: isPublic !== undefined ? isPublic : true
-        });
+        };
+
+        // Set status based on game mode
+        if (gameData.gameMode === '1v1') {
+            gameData.status = 'waiting'; // Wait for player 2
+        } else {
+            gameData.status = 'active'; // AI and crowd games start immediately
+        }
+
+        // Set AI difficulty if AI mode
+        if (gameData.gameMode === 'ai') {
+            gameData.aiDifficulty = aiDifficulty || 3;
+        }
+
+        const game = new Game(gameData);
         await game.save();
         res.status(201).json(game);
     } catch (err) {
@@ -162,7 +177,9 @@ router.delete('/:id/heart', authenticateToken, async (req, res) => {
 // Get game state - Public
 router.get('/:id', async (req, res) => {
     try {
-        const game = await Game.findById(req.params.id).populate('singlePlayerId', 'username');
+        const game = await Game.findById(req.params.id)
+            .populate('singlePlayerId', 'username')
+            .populate('player2Id', 'username');
         if (!game) return res.status(404).json({ error: 'Game not found' });
 
         res.json(game);
@@ -171,10 +188,10 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Join game (as single player) - Protected
+// Join game - Protected
 router.post('/:id/join', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
-    const { role } = req.body; // role: 'player' or 'crowd'
+    const { role } = req.body; // role: 'player' or 'crowd' or 'player2'
     try {
         const game = await Game.findById(req.params.id);
         if (!game) return res.status(404).json({ error: 'Game not found' });
@@ -190,10 +207,28 @@ router.post('/:id/join', authenticateToken, async (req, res) => {
             }
             game.status = 'active';
             await game.save();
+        } else if (role === 'player2') {
+            // Join as player 2 in 1v1 mode
+            if (game.gameMode !== '1v1') {
+                return res.status(400).json({ error: 'This is not a 1v1 game' });
+            }
+            if (game.player2Id) {
+                return res.status(400).json({ error: 'Player 2 already joined' });
+            }
+            if (game.singlePlayerId.toString() === userId) {
+                return res.status(400).json({ error: 'Cannot join your own game as player 2' });
+            }
+
+            game.player2Id = userId;
+            game.status = 'active';
+            await game.save();
         }
         // Crowd doesn't need to strictly "join" the DB model, they just connect via socket
 
-        res.json(game);
+        const populatedGame = await Game.findById(game._id)
+            .populate('singlePlayerId', 'username')
+            .populate('player2Id', 'username');
+        res.json(populatedGame);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
