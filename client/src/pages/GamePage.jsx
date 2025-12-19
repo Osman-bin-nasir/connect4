@@ -31,6 +31,9 @@ function GamePage() {
     const [isEditingCrowdName, setIsEditingCrowdName] = useState(false);
     const [tempCrowdName, setTempCrowdName] = useState('The Crowd');
 
+    const [stats, setStats] = useState({ player1Wins: 0, player2Wins: 0 });
+    const [rematchRequests, setRematchRequests] = useState([]);
+
     useEffect(() => {
         const id = localStorage.getItem('userId');
         setUserId(id);
@@ -55,6 +58,7 @@ function GamePage() {
         // If we have a gameId from URL, join it
         if (gameId) {
             loadGame(gameId, id);
+            fetchStats(gameId);
         }
 
         socket.on('game_state', (data) => {
@@ -80,13 +84,30 @@ function GamePage() {
             setTimer(time);
         });
 
+        // Rematch listeners
+        socket.on('rematch_update', (data) => {
+            setRematchRequests(data.requestedBy || []);
+        });
+
+        socket.on('game_reset', ({ newGameId }) => {
+            toast.success('Starting new game!');
+            navigate(`/game/${newGameId}`);
+            // Reset state? Navigate handles unmount/mount usually, but strict mode might be tricky.
+            // React Router navigate should clear the component state as it mounts a new instance for the new ID.
+            window.location.reload(); // Force reload to be safe and clean socket states? Or just navigate?
+            // Actually, simple navigate is better SPA experience. But ensure state is fresh.
+            // The useEffect with [gameId] dependency dependency will trigger loadGame.
+        });
+
         return () => {
             socket.off('game_state');
             socket.off('vote_update');
             socket.off('timer_sync');
+            socket.off('rematch_update');
+            socket.off('game_reset');
             socket.disconnect();
         };
-    }, [gameId]);
+    }, [gameId]); // Dependency on gameId triggers re-run when ID changes
 
     // Auto-play effect
     useEffect(() => {
@@ -104,6 +125,15 @@ function GamePage() {
         }
         return () => clearInterval(interval);
     }, [isAutoPlaying, isReplaying, game]);
+
+    const fetchStats = async (gId) => {
+        try {
+            const res = await axios.get(`${API_URL}/api/games/${gId}/stats`);
+            setStats(res.data);
+        } catch (err) {
+            console.error('Failed to fetch stats', err);
+        }
+    };
 
     const loadGame = async (gId, uId) => {
         try {
@@ -303,6 +333,15 @@ function GamePage() {
         }
     };
 
+    const handleRematch = () => {
+        if (!userId) {
+            toast.error('You must be logged in to request a rematch');
+            return;
+        }
+        socket.emit('request_rematch', { gameId: game._id });
+        toast('Requesting rematch...', { icon: '🔄' });
+    };
+
     // Replay functions
     const reconstructBoard = (moves) => {
         const board = Array(6).fill().map(() => Array(7).fill(0));
@@ -449,49 +488,72 @@ function GamePage() {
                 </div>
             </div>
 
-            {/* Color Legend */}
-            <div className="mb-6 flex justify-center gap-6 text-sm">
-                <div className="w-40 h-10 min-h-[2.5rem] flex items-center just ify-start gap-2 bg-gray-800/50 px-4 rounded-lg border border-gray-700">
-                    <div className="w-6 h-6 rounded bg-red-500 shrink-0"></div>
-                    <span className="text-gray-300 truncate block w-[6.5rem] text-left">{player1Name}</span>
+            {/* Sign In Notice for 1v1 */}
+            {gameMode === '1v1' && !userId && !game.player2Id && (
+                <div className="mb-4 bg-blue-600/20 border border-blue-500/50 text-blue-200 px-4 py-2 rounded-lg flex items-center gap-2 animate-pulse">
+                    <span className="text-xl">ℹ️</span>
+                    <span>Please <strong>sign in</strong> to join this game as Player 2!</span>
                 </div>
-                <div className="w-40 h-10 min-h-[2.5rem] flex items-center justify-start gap-2 bg-gray-800/50 px-4 rounded-lg border border-gray-700">
-                    <div className="w-6 h-6 rounded bg-yellow-400 shrink-0"></div>
-                    <div className="w-[6.5rem] h-6 flex items-center">
-                        {isEditingCrowdName && gameMode === 'crowd' ? (
-                            <input
-                                type="text"
-                                value={tempCrowdName}
-                                onChange={(e) => setTempCrowdName(e.target.value)}
-                                className="w-full h-6 bg-gray-700 text-white px-2 rounded text-sm focus:outline-none focus:border-yellow-500"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleCrowdNameUpdate();
-                                    if (e.key === 'Escape') {
+            )}
+
+            {/* Color Legend with Scores */}
+            <div className="mb-6 flex justify-center gap-6 text-sm">
+                <div className="w-48 h-12 flex items-center justify-between gap-2 bg-gray-800/50 px-4 rounded-lg border border-gray-700">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                        <div className="w-6 h-6 rounded bg-red-500 shrink-0"></div>
+                        <span className="text-gray-300 truncate block max-w-[5rem] text-left" title={player1Name}>{player1Name}</span>
+                    </div>
+                    {gameMode === '1v1' && (
+                        <div className="text-xl font-bold text-gray-400 bg-gray-900/50 px-2 rounded">
+                            {stats.player1Wins || 0}
+                        </div>
+                    )}
+                </div>
+
+                <div className="w-48 h-12 flex items-center justify-between gap-2 bg-gray-800/50 px-4 rounded-lg border border-gray-700">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                        <div className="w-6 h-6 rounded bg-yellow-400 shrink-0"></div>
+                        <div className="max-w-[5rem] h-6 flex items-center">
+                            {isEditingCrowdName && gameMode === 'crowd' ? (
+                                <input
+                                    type="text"
+                                    value={tempCrowdName}
+                                    onChange={(e) => setTempCrowdName(e.target.value)}
+                                    className="w-full h-6 bg-gray-700 text-white px-2 rounded text-sm focus:outline-none focus:border-yellow-500"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleCrowdNameUpdate();
+                                        if (e.key === 'Escape') {
+                                            setTempCrowdName(game.crowdName || 'The Crowd');
+                                            setIsEditingCrowdName(false);
+                                        }
+                                    }}
+                                    onBlur={() => {
                                         setTempCrowdName(game.crowdName || 'The Crowd');
                                         setIsEditingCrowdName(false);
-                                    }
-                                }}
-                                onBlur={() => {
-                                    setTempCrowdName(game.crowdName || 'The Crowd');
-                                    setIsEditingCrowdName(false);
-                                }}
-                            />
-                        ) : (
-                            <span
-                                className={`text-gray-300 truncate block w-full text-left ${role === 'player' && gameMode === 'crowd'
-                                    ? 'cursor-pointer hover:text-yellow-400 hover:underline decoration-dashed underline-offset-4'
-                                    : ''
-                                    }`}
-                                onDoubleClick={() => {
-                                    if (role === 'player' && gameMode === 'crowd') setIsEditingCrowdName(true);
-                                }}
-                                title={role === 'player' && gameMode === 'crowd' ? "Double click to rename" : ""}
-                            >
-                                {player2Name}
-                            </span>
-                        )}
+                                    }}
+                                />
+                            ) : (
+                                <span
+                                    className={`text-gray-300 truncate block w-full text-left ${role === 'player' && gameMode === 'crowd'
+                                        ? 'cursor-pointer hover:text-yellow-400 hover:underline decoration-dashed underline-offset-4'
+                                        : ''
+                                        }`}
+                                    onDoubleClick={() => {
+                                        if (role === 'player' && gameMode === 'crowd') setIsEditingCrowdName(true);
+                                    }}
+                                    title={role === 'player' && gameMode === 'crowd' ? "Double click to rename" : player2Name} // fixed title
+                                >
+                                    {player2Name}
+                                </span>
+                            )}
+                        </div>
                     </div>
+                    {gameMode === '1v1' && (
+                        <div className="text-xl font-bold text-gray-400 bg-gray-900/50 px-2 rounded">
+                            {stats.player2Wins || 0}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -538,8 +600,8 @@ function GamePage() {
             )}
 
             <div className="mb-8 flex flex-col items-center gap-2 px-4">
-                <div className="w-full max-w-xl flex justify-center">
-                    <h1 className="text-2xl md:text-4xl h-10 w-full max-w-xl flex items-center justify-center text-center whitespace-nowrap font-bold">
+                <div className="w-full max-w-xl flex flex-col items-center justify-center">
+                    <h1 className="text-2xl md:text-4xl h-10 w-full flex items-center justify-center text-center whitespace-nowrap font-bold">
                         {game.status === 'completed'
                             ? <span className="text-green-400">
                                 Winner: {game.winner === 'player' ? player1Name :
@@ -561,6 +623,24 @@ function GamePage() {
                             </span>
                         }
                     </h1>
+
+                    {/* Rematch Button for 1v1 */}
+                    {game.status === 'completed' && gameMode === '1v1' && (role === 'player' || role === 'player2') && (
+                        <div className="mt-4 animate-in fade-in slide-in-from-bottom-2">
+                            {rematchRequests.includes(userId) ? (
+                                <span className="text-yellow-400 font-mono animate-pulse">Waiting for opponent...</span>
+                            ) : (
+                                <button
+                                    onClick={handleRematch}
+                                    className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-full font-bold shadow-lg shadow-green-500/20 transition-all transform hover:scale-105 flex items-center gap-2"
+                                >
+                                    <Sparkles className="w-5 h-5" />
+                                    {rematchRequests.length > 0 ? "Opponent wants Rematch!" : "Play Again"}
+                                </button>
+                            )}
+                        </div>
+                    )}
+
                 </div>
                 <div className="h-6 w-full flex justify-center">
                     <p
