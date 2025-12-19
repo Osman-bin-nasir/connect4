@@ -57,21 +57,44 @@ function Home() {
         }
 
         try {
+            const token = localStorage.getItem('token');
+
+            // Debug: Check if token exists
+            if (!token) {
+                console.error('No token found in localStorage');
+                toast.error('Authentication token not found. Please log in again.');
+                navigate('/login');
+                return;
+            }
+
+            console.log('Token exists, making request...');
+
             if (isHearted) {
                 // Unheart
                 await axios.delete(`${API_URL}/api/games/${gameId}/heart`, {
-                    data: { userId }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Removed from favorites');
             } else {
                 // Heart
-                await axios.post(`${API_URL}/api/games/${gameId}/heart`, { userId });
+                await axios.post(`${API_URL}/api/games/${gameId}/heart`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 toast.success('Added to favorites!', { icon: '❤️' });
             }
             // Refresh popular games to update heart counts
             fetchPopularGames();
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Failed to update heart');
+            console.error('Heart error:', err);
+            console.error('Error response:', err.response);
+
+            // More specific error messages
+            if (err.response?.status === 401) {
+                toast.error('Session expired. Please log in again.');
+                navigate('/login');
+            } else {
+                toast.error(err.response?.data?.error || 'Failed to update heart');
+            }
         }
     };
 
