@@ -170,6 +170,7 @@ module.exports = (io) => {
 
             // Record vote and mark user as voted
             gameVotes[gameId][col]++;
+            console.log(`Vote cast in ${gameId} for col ${col}. Total: ${gameVotes[gameId][col]}`);
             gameVoters[gameId].add(voterId);
 
             // Track unique crowd player (only on first vote ever, not per turn)
@@ -342,6 +343,8 @@ async function resolveCrowdTurn(io, gameId) {
         if (!game) return;
 
         const votes = gameVotes[gameId] || {};
+        console.log(`Resolving turn for ${gameId}. Votes:`, JSON.stringify(votes));
+
         let maxVotes = -1;
         let candidates = [];
 
@@ -382,7 +385,13 @@ async function resolveCrowdTurn(io, gameId) {
 
         if (moveResult.success) {
             // Record the move for replay
-            game.moves.push({ col: selectedCol, player: 'crowd', timestamp: new Date() });
+            const moveVoteCount = (votes[selectedCol] || 0); // Get actual votes for this col
+            game.moves.push({
+                col: selectedCol,
+                player: 'crowd',
+                voteCount: moveVoteCount,
+                timestamp: new Date()
+            });
 
             const winner = checkWin(game.board);
             if (winner) {

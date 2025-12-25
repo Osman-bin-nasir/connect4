@@ -595,7 +595,16 @@ function GamePage() {
                             style={{ width: `${(replayIndex / Math.max(1, game.moves.length)) * 100}%` }}
                         ></div>
                     </div>
-                    <p className="text-xs font-mono text-gray-400">Move {replayIndex} / {game.moves.length}</p>
+                    <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
+                        <span>Move {replayIndex} / {game.moves.length}</span>
+                        {/* Vote Count Badge */}
+                        {replayIndex > 0 && game.moves[replayIndex - 1] && game.moves[replayIndex - 1].player === 'crowd' && (
+                            <span className="flex items-center gap-1 bg-yellow-500/10 text-yellow-400 px-2 py-0.5 rounded border border-yellow-500/20 animate-in fade-in zoom-in">
+                                <span className="text-xs">🗳️</span>
+                                {game.moves[replayIndex - 1].voteCount || 0} votes
+                            </span>
+                        )}
+                    </div>
                 </div>
             )}
 

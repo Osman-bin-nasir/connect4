@@ -20,6 +20,7 @@ const gameSchema = new mongoose.Schema({
     moves: [{
         col: { type: Number, required: true },
         player: { type: String, enum: ['player', 'player2', 'crowd', 'ai'], required: true },
+        voteCount: { type: Number, default: 0 },
         timestamp: { type: Date, default: Date.now }
     }],
     // Community features
