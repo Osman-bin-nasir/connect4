@@ -11,14 +11,44 @@ const authRoutes = require('./routes/auth');
 
 const app = express();
 const server = http.createServer(app);
+
+const allowedOrigins = [
+    "https://connect4.jacksucksatlife.com",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://connect-git-main-ismiles-projects-9aee7083.vercel.app",
+    "https://connect-kmoopjmya-ismiles-projects-9aee7083.vercel.app"
+];
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            // Be permissive for now to debug, or strict? 
+            // Let's stick to the list but maybe log if blocked?
+            // Actually, for this fix let's just use the array directly in 'origin' usuallyworks fine for cors middleware
+            callback(null, true);
+        }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+};
+
 const io = new Server(server, {
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
-app.use(cors());
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+}));
 app.use(express.json());
 
 // Database Connection
