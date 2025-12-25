@@ -244,7 +244,7 @@ router.post('/:id/join', authenticateToken, async (req, res) => {
 router.get('/user/:userId', authenticateToken, async (req, res) => {
     try {
         // Enforce that you can only fetch your own games for the dashboard "manage" view
-        if (req.params.userId !== req.user.userId) {
+        if (!req.user || !req.user.userId || req.params.userId.toString() !== req.user.userId.toString()) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
         const games = await Game.find({ singlePlayerId: req.params.userId }).sort({ createdAt: -1 });
@@ -296,6 +296,63 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         await Game.findByIdAndDelete(req.params.id);
 
         res.json({ message: 'Game deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get head-to-head stats for 1v1 game
+router.get('/:id/stats', async (req, res) => {
+    try {
+        const game = await Game.findById(req.params.id);
+        if (!game) return res.status(404).json({ error: 'Game not found' });
+
+        if (game.gameMode !== '1v1' || !game.player2Id) {
+            return res.json({ player1Wins: 0, player2Wins: 0 });
+        }
+
+        const p1Id = game.singlePlayerId;
+        const p2Id = game.player2Id;
+
+        // Count games where P1 (as host or joiner) won against P2
+        const p1WinsAsHost = await Game.countDocuments({
+            singlePlayerId: p1Id,
+            player2Id: p2Id,
+            gameMode: '1v1',
+            status: 'completed',
+            winner: 'player'
+        });
+
+        const p1WinsAsJoiner = await Game.countDocuments({
+            singlePlayerId: p2Id,
+            player2Id: p1Id,
+            gameMode: '1v1',
+            status: 'completed',
+            winner: 'player2'
+        });
+
+        // Count games where P2 (as host or joiner) won against P1
+        const p2WinsAsJoiner = await Game.countDocuments({
+            singlePlayerId: p1Id,
+            player2Id: p2Id,
+            gameMode: '1v1',
+            status: 'completed',
+            winner: 'player2'
+        });
+
+        const p2WinsAsHost = await Game.countDocuments({
+            singlePlayerId: p2Id,
+            player2Id: p1Id,
+            gameMode: '1v1',
+            status: 'completed',
+            winner: 'player'
+        });
+
+        res.json({
+            player1Wins: p1WinsAsHost + p1WinsAsJoiner,
+            player2Wins: p2WinsAsHost + p2WinsAsJoiner
+        });
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

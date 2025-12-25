@@ -22,7 +22,7 @@ app.use(cors());
 app.use(express.json());
 
 // Database Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/connect4crowd')
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/connect4crowdtest')
     .then(() => console.log('MongoDB Connected'))
     .catch(err => console.log(err));
 

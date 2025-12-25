@@ -7,6 +7,7 @@ const gameVotes = {}; // { gameId: { col0: 5, col1: 2 } }
 const gameTimers = {}; // { gameId: intervalId }
 const gameTimeLeft = {}; // { gameId: seconds } - track current time for sync
 const gameVoters = {}; // { gameId: Set([socketId1, socketId2, ...]) } - track who voted this turn
+const rematchRequests = {}; // { gameId: Set(userIds) }
 
 
 const jwt = require('jsonwebtoken');
@@ -213,6 +214,83 @@ module.exports = (io) => {
 
         socket.on('disconnect', () => {
             console.log('User disconnected:', socket.id);
+        });
+
+        // Rematch Logic for 1v1
+        socket.on('request_rematch', async (data) => {
+            if (!socket.user) return; // Auth required
+            if (!data || !data.gameId) {
+                console.error('Invalid rematch request payload:', data);
+                return;
+            }
+
+            const { gameId } = data;
+
+            try {
+                const game = await Game.findById(gameId);
+                // Validation: Must be 1v1, completed, and user must be one of the players
+                if (!game) {
+                    console.log('Rematch requested for non-existent game:', gameId);
+                    return;
+                }
+                if (game.gameMode !== '1v1' || game.status !== 'completed') {
+                    console.log('Invalid rematch state:', game.gameMode, game.status);
+                    return;
+                }
+
+                const userId = socket.user.userId;
+                // Safely convert ObjectIds to strings
+                const p1Id = game.singlePlayerId ? game.singlePlayerId.toString() : null;
+                const p2Id = game.player2Id ? game.player2Id.toString() : null;
+
+                if (userId !== p1Id && userId !== p2Id) {
+                    console.log('Rematch requested by non-participant:', userId);
+                    return;
+                }
+
+                // Init rematch tracking
+                if (!rematchRequests[gameId]) rematchRequests[gameId] = new Set();
+
+                rematchRequests[gameId].add(userId);
+
+                // Check if both agreed
+                const requests = rematchRequests[gameId];
+
+                console.log(`Rematch requested for ${gameId} by ${userId}. Total requests: ${requests.size}`);
+
+                // Emit update to show who accepted
+                io.to(gameId).emit('rematch_update', {
+                    requestedBy: Array.from(requests)
+                });
+
+                if (requests.size >= 2) {
+                    console.log(`Both players agreed to rematch in ${gameId}. Starting new game...`);
+                    // Start new game!
+                    // Create new game with same settings
+                    // However, to keep "host" consistent, let's keep spId as p1.
+
+                    const newGame = new Game({
+                        name: game.name,
+                        status: 'active', // 1v1 starts active if we pre-fill p2
+                        gameMode: '1v1',
+                        singlePlayerId: game.singlePlayerId,
+                        player2Id: game.player2Id,
+                        isPublic: game.isPublic,
+                        turnDuration: game.turnDuration
+                    });
+
+                    await newGame.save();
+
+                    // Notify clients to switch
+                    io.to(gameId).emit('game_reset', { newGameId: newGame._id });
+
+                    // Cleanup
+                    delete rematchRequests[gameId];
+                }
+
+            } catch (err) {
+                console.error('Error in request_rematch:', err);
+            }
         });
     });
 };
