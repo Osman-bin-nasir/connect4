@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
-import { Heart, ArrowLeft, Share2, Play, Pause, SkipBack, SkipForward, FastForward, Rewind, Film, XCircle, Sparkles, Check, X } from 'lucide-react';
+import { Heart, ArrowLeft, Share2, Play, Pause, SkipBack, SkipForward, FastForward, Rewind, Film, XCircle, Sparkles, Check, X, Users } from 'lucide-react';
+
 import Board from '../components/Board';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -599,10 +600,11 @@ function GamePage() {
                         <span>Move {replayIndex} / {game.moves.length}</span>
                         {/* Vote Count Badge */}
                         {replayIndex > 0 && game.moves[replayIndex - 1] && game.moves[replayIndex - 1].player === 'crowd' && (
-                            <span className="flex items-center gap-1 bg-yellow-500/10 text-yellow-400 px-2 py-0.5 rounded border border-yellow-500/20 animate-in fade-in zoom-in">
-                                <span className="text-xs">🗳️</span>
-                                {game.moves[replayIndex - 1].voteCount || 0} votes
-                            </span>
+                            <div className="flex items-center gap-1.5 bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 text-yellow-400 px-3 py-1 rounded-full border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)] animate-in fade-in zoom-in slide-in-from-bottom-1">
+                                <Users className="w-3.5 h-3.5" />
+                                <span className="font-bold text-yellow-300">{game.moves[replayIndex - 1].voteCount || 0}</span>
+                                <span className="opacity-80">votes</span>
+                            </div>
                         )}
                     </div>
                 </div>
