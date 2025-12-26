@@ -14,6 +14,7 @@ function Home() {
     const [leaderboard, setLeaderboard] = useState([]);
     const [popularGames, setPopularGames] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [userHearts, setUserHearts] = useState([]); // Array of game IDs hearted by user
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -23,11 +24,27 @@ function Home() {
 
         const fetchData = async () => {
             setIsLoading(true);
-            await Promise.all([fetchLeaderboard(), fetchPopularGames()]);
+            const promises = [fetchLeaderboard(), fetchPopularGames()];
+            if (id) {
+                promises.push(fetchUserHearts());
+            }
+            await Promise.all(promises);
             setIsLoading(false);
         };
         fetchData();
     }, []);
+
+    const fetchUserHearts = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/api/games/my-hearts`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUserHearts(res.data);
+        } catch (err) {
+            console.error('Failed to fetch user hearts', err);
+        }
+    };
 
     const fetchLeaderboard = async () => {
         try {
@@ -75,12 +92,14 @@ function Home() {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Removed from favorites');
+                setUserHearts(prev => prev.filter(id => id !== gameId));
             } else {
                 // Heart
                 await axios.post(`${API_URL}/api/games/${gameId}/heart`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Added to favorites!', { icon: '❤️' });
+                setUserHearts(prev => [...prev, gameId]);
             }
             // Refresh popular games to update heart counts
             fetchPopularGames();
@@ -111,7 +130,7 @@ function Home() {
     };
 
     const renderGameCard = (game) => {
-        const isHearted = game.hearts && userId && game.hearts.includes(userId);
+        const isHearted = userHearts.includes(game._id);
         const creatorName = game.singlePlayerId?.username || 'Anonymous';
 
         return (

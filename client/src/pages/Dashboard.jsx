@@ -410,10 +410,10 @@ function Dashboard() {
                                             <div className="flex gap-2">
                                                 {/* Game Mode Badge */}
                                                 <span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 font-medium ${game.gameMode === 'ai'
-                                                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                                                        : game.gameMode === '1v1'
-                                                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                                            : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                                                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                                                    : game.gameMode === '1v1'
+                                                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                        : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
                                                     }`}>
                                                     {game.gameMode === 'ai' ? '🤖 AI' : game.gameMode === '1v1' ? '👥 1v1' : '🎭 Crowd'}
                                                 </span>
@@ -438,7 +438,7 @@ function Dashboard() {
                                         <div className="flex gap-4 mt-2">
                                             <span className="flex items-center gap-1 font-semibold text-red-400">
                                                 <Heart className="w-4 h-4 fill-red-400" />
-                                                <span>{game.hearts?.length || 0}</span>
+                                                <span>{game.heartCount || 0}</span>
                                             </span>
                                         </div>
                                         <p className="text-xs font-mono bg-gray-900 px-2 py-1 rounded">ID: {game._id}</p>

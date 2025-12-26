@@ -367,4 +367,16 @@ router.get('/:id/is-hearted', authenticateToken, async (req, res) => {
     }
 });
 
+// Get all games hearted by user
+router.get('/my-hearts', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const hearts = await Heart.find({ user: userId }).select('game');
+        const gameIds = hearts.map(h => h.game);
+        res.json(gameIds);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
