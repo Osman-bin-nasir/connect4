@@ -7,7 +7,6 @@ import Board from '../components/Board';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-import { v4 as uuidv4 } from 'uuid';
 import API_URL from '../config';
 
 const socket = io(API_URL, {
@@ -23,7 +22,6 @@ function GamePage() {
     const [uniqueVoters, setUniqueVoters] = useState(0);
     const [timer, setTimer] = useState(null);
     const [userId, setUserId] = useState(null);
-    const [crowdUserId, setCrowdUserId] = useState(null);
     const [isReplaying, setIsReplaying] = useState(false);
     const [replayIndex, setReplayIndex] = useState(0);
     const [liveGame, setLiveGame] = useState(null);
@@ -39,13 +37,7 @@ function GamePage() {
         const id = localStorage.getItem('userId');
         setUserId(id);
 
-        // Persistent Crowd ID (for anti-spam)
-        let cId = localStorage.getItem('crowdUserId');
-        if (!cId) {
-            cId = uuidv4();
-            localStorage.setItem('crowdUserId', cId);
-        }
-        setCrowdUserId(cId);
+
 
         // Socket Auth
         const token = localStorage.getItem('token');
@@ -221,7 +213,7 @@ function GamePage() {
             if (role === 'player' && game.currentTurn === 'player') {
                 socket.emit('make_move', { gameId: game._id, col });
             } else if (role === 'crowd' && game.currentTurn === 'crowd') {
-                socket.emit('cast_vote', { gameId: game._id, col, crowdUserId });
+                socket.emit('cast_vote', { gameId: game._id, col });
             }
         } else if (gameMode === '1v1') {
             if (role === 'player' && game.currentTurn === 'player') {

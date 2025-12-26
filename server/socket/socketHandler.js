@@ -151,8 +151,10 @@ module.exports = (io) => {
             }
         });
 
-        socket.on('cast_vote', async ({ gameId, col, crowdUserId }) => {
-            const voterId = crowdUserId || socket.id; // Fallback to socket.id if not provided
+        socket.on('cast_vote', async ({ gameId, col }) => {
+            // Security: Use authenticated user ID if available, otherwise fallback to socket.id
+            // Do NOT trust client supplied crowdUserId
+            const voterId = socket.user ? socket.user.userId : socket.id;
 
             // Initialize vote tracking structures if needed
             if (!gameVotes[gameId]) gameVotes[gameId] = {};
@@ -176,8 +178,8 @@ module.exports = (io) => {
             // Track unique crowd player (only on first vote ever, not per turn)
             try {
                 const game = await Game.findById(gameId);
-                if (game && crowdUserId && !game.uniquePlayers.includes(crowdUserId)) {
-                    game.uniquePlayers.push(crowdUserId);
+                if (game && !game.uniquePlayers.includes(voterId)) {
+                    game.uniquePlayers.push(voterId);
                     await game.save();
                 }
             } catch (err) {

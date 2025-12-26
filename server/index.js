@@ -27,10 +27,7 @@ const corsOptions = {
         if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
             callback(null, true);
         } else {
-            // Be permissive for now to debug, or strict? 
-            // Let's stick to the list but maybe log if blocked?
-            // Actually, for this fix let's just use the array directly in 'origin' usuallyworks fine for cors middleware
-            callback(null, true);
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
