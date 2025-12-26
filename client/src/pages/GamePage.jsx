@@ -190,8 +190,18 @@ function GamePage() {
             setRole(userRole);
 
             // Check if user has hearted this game
-            if (uId && loadedGame.hearts) {
-                setIsHearted(loadedGame.hearts.includes(uId));
+            if (uId) {
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        const heartRes = await axios.get(`${API_URL}/api/games/${gId}/is-hearted`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        setIsHearted(heartRes.data.isHearted);
+                    }
+                } catch (hErr) {
+                    console.error('Failed to check heart status', hErr);
+                }
             }
 
             setGame(loadedGame);
@@ -267,7 +277,7 @@ function GamePage() {
                 if (game) {
                     setGame({
                         ...game,
-                        hearts: game.hearts.filter(id => id !== userId)
+                        heartCount: Math.max(0, (game.heartCount || 0) - 1)
                     });
                 }
             } else {
@@ -281,7 +291,7 @@ function GamePage() {
                 if (game) {
                     setGame({
                         ...game,
-                        hearts: [...(game.hearts || []), userId]
+                        heartCount: (game.heartCount || 0) + 1
                     });
                 }
             }
@@ -469,7 +479,7 @@ function GamePage() {
                         title={userId ? (isHearted ? 'Unheart' : 'Heart this game') : 'Login to heart'}
                     >
                         <Heart className={`w-5 h-5 ${isHearted ? 'fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' : ''}`} />
-                        <span className="font-semibold">{game?.hearts?.length || 0}</span>
+                        <span className="font-semibold">{game?.heartCount || 0}</span>
                     </button>
                     <button
                         onClick={handleShare}

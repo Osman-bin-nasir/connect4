@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Game = require('../models/Game');
 const User = require('../models/User');
+const Heart = require('../models/Heart');
 const authenticateToken = require('../middleware/auth');
 
 // Create a new game
@@ -82,42 +83,29 @@ router.get('/leaderboard', async (req, res) => {
 // Get popular games (Most Loved) - Public
 router.get('/popular', async (req, res) => {
     try {
-        const mostLoved = await Game.aggregate([
-            { $match: { isPublic: true } },
-            {
-                $addFields: {
-                    heartCount: { $size: { $ifNull: ['$hearts', []] } }
-                }
-            },
-            { $match: { heartCount: { $gt: 0 } } },
-            { $sort: { heartCount: -1 } },
-            { $limit: 10 },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'singlePlayerId',
-                    foreignField: '_id',
-                    as: 'player'
-                }
-            },
-            { $unwind: { path: '$player', preserveNullAndEmptyArrays: true } },
-            {
-                $project: {
-                    _id: 1,
-                    name: 1,
-                    status: 1,
-                    hearts: 1,
-                    heartCount: 1,
-                    createdAt: 1,
-                    singlePlayerId: {
-                        _id: '$player._id',
-                        username: '$player.username'
-                    }
-                }
-            }
-        ]);
+        const mostLoved = await Game.find({ isPublic: true, heartCount: { $gt: 0 } })
+            .sort({ heartCount: -1 })
+            .limit(10)
+            .populate('singlePlayerId', 'username');
 
-        res.json(mostLoved);
+        // Transform for frontend consistency if needed, but find+populate is usually cleaner than aggregate
+        // The original aggregation had a specific project structure. Let's match it roughly or just return the docs.
+        // Frontend expects: { _id, name, status, hearts (array len?), heartCount, createdAt, singlePlayerId: { _id, username } }
+
+        // Let's use aggregation to be safe to match exact structure if strictly needed, 
+        // OR just mapping. database is cleaner now.
+        // Let's stick to aggregation for precise control but simpler now.
+
+        const result = mostLoved.map(g => ({
+            _id: g._id,
+            name: g.name,
+            status: g.status,
+            heartCount: g.heartCount, // Direct field
+            createdAt: g.createdAt,
+            singlePlayerId: g.singlePlayerId
+        }));
+
+        res.json(result);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -127,26 +115,33 @@ router.get('/popular', async (req, res) => {
 router.post('/:id/heart', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
+        const gameId = req.params.id;
 
-        const game = await Game.findById(req.params.id);
+        const game = await Game.findById(gameId);
         if (!game) return res.status(404).json({ error: 'Game not found' });
 
-        // Check if user already hearted this game
-        const hearts = game.hearts || [];
-        if (hearts.some(id => id.toString() === userId)) {
+        // Check if already hearted
+        const existingHeart = await Heart.findOne({ user: userId, game: gameId });
+        if (existingHeart) {
             return res.status(400).json({ error: 'Already hearted this game' });
         }
 
-        // Add user to hearts array
-        game.hearts = [...hearts, userId];
+        // Create Heart
+        await Heart.create({ user: userId, game: gameId });
+
+        // Increment count
+        game.heartCount = (game.heartCount || 0) + 1;
         await game.save();
 
         res.json({
             success: true,
-            heartCount: game.hearts.length,
-            hearts: game.hearts
+            heartCount: game.heartCount
         });
     } catch (err) {
+        // Handle race condition duplicate key error
+        if (err.code === 11000) {
+            return res.status(400).json({ error: 'Already hearted this game' });
+        }
         res.status(500).json({ error: err.message });
     }
 });
@@ -155,19 +150,22 @@ router.post('/:id/heart', authenticateToken, async (req, res) => {
 router.delete('/:id/heart', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
+        const gameId = req.params.id;
 
-        const game = await Game.findById(req.params.id);
+        const game = await Game.findById(gameId);
         if (!game) return res.status(404).json({ error: 'Game not found' });
 
-        // Remove user from hearts array
-        const hearts = game.hearts || [];
-        game.hearts = hearts.filter(id => id.toString() !== userId);
-        await game.save();
+        const result = await Heart.findOneAndDelete({ user: userId, game: gameId });
+
+        if (result) {
+            // Decrement count
+            game.heartCount = Math.max(0, (game.heartCount || 0) - 1);
+            await game.save();
+        }
 
         res.json({
             success: true,
-            heartCount: game.hearts.length,
-            hearts: game.hearts
+            heartCount: game.heartCount
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -353,6 +351,17 @@ router.get('/:id/stats', async (req, res) => {
             player2Wins: p2WinsAsHost + p2WinsAsJoiner
         });
 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Check if hearted - Protected
+router.get('/:id/is-hearted', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const exists = await Heart.exists({ user: userId, game: req.params.id });
+        res.json({ isHearted: !!exists });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

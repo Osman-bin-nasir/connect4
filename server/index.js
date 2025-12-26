@@ -3,7 +3,16 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+
+// Global Rate Limiter
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 300, // Limit each IP to 300 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 const userRoutes = require('./routes/user');
 const gameRoutes = require('./routes/game');
@@ -46,6 +55,7 @@ app.use(cors({
     origin: allowedOrigins,
     credentials: true
 }));
+app.use(limiter);
 app.use(express.json());
 
 // Database Connection

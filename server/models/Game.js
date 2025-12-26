@@ -24,11 +24,17 @@ const gameSchema = new mongoose.Schema({
         timestamp: { type: Date, default: Date.now }
     }],
     // Community features
-    hearts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Users who hearted this game
+    // hearts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // DEPRECATED: Caused unbounded growth. Use Heart collection.
+    heartCount: { type: Number, default: 0 }, // Denormalized count for performance
     uniquePlayers: [{ type: String }], // Unique user/crowd IDs who have made moves (for tracking actual plays)
     isPublic: { type: Boolean, default: true }, // Public or private game
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+
+    // Persistence for Suspend/Resume (Long-running games)
+    savedVotes: { type: Map, of: Number, default: {} }, // Stores { "0": 5, "1": 2 }
+    savedTimeLeft: { type: Number, default: null },     // Seconds remaining
+    lastActivity: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('Game', gameSchema);

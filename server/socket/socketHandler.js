@@ -8,6 +8,52 @@ const gameTimers = {}; // { gameId: intervalId }
 const gameTimeLeft = {}; // { gameId: seconds } - track current time for sync
 const gameVoters = {}; // { gameId: Set([socketId1, socketId2, ...]) } - track who voted this turn
 const rematchRequests = {}; // { gameId: Set(userIds) }
+const gameLastActivity = {}; // { gameId: timestamp } - for garbage collection
+
+// Garbage Collection Interval (runs every hour)
+// Garbage Collection Interval (runs every hour)
+setInterval(() => {
+    const NOW = Date.now();
+    const IDLE_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
+
+    Object.keys(gameLastActivity).forEach(async (gameId) => {
+        if (NOW - gameLastActivity[gameId] > IDLE_TIMEOUT) {
+
+            // SUSPEND LOGIC: Persist state before deleting
+            const hasVotes = gameVotes[gameId] && Object.keys(gameVotes[gameId]).length > 0;
+            const hasTimer = gameTimeLeft[gameId] !== undefined;
+
+            if (hasVotes || hasTimer) {
+                try {
+                    const game = await Game.findById(gameId);
+                    if (game) {
+                        if (hasVotes) game.savedVotes = gameVotes[gameId];
+                        if (hasTimer) game.savedTimeLeft = gameTimeLeft[gameId];
+                        game.lastActivity = new Date(gameLastActivity[gameId]); // Sync activity
+                        await game.save();
+                        console.log(`GC: Suspended idle game ${gameId} to DB.`);
+                    }
+                } catch (err) {
+                    console.error(`GC: Failed to suspend game ${gameId}`, err);
+                    return; // Abort cleanup if save fails
+                }
+            }
+
+            delete gameVotes[gameId];
+            delete gameVoters[gameId];
+            delete rematchRequests[gameId];
+            delete gameLastActivity[gameId];
+
+            // Clear timer if exists
+            if (gameTimers[gameId]) {
+                clearInterval(gameTimers[gameId]);
+                delete gameTimers[gameId];
+                delete gameTimeLeft[gameId];
+            }
+            console.log(`GC: Cleaned up RAM for idle game ${gameId}`);
+        }
+    });
+}, 60 * 60 * 1000);
 
 
 const jwt = require('jsonwebtoken');
@@ -35,6 +81,7 @@ module.exports = (io) => {
 
         socket.on('join_game', async ({ gameId, role }) => {
             socket.join(gameId);
+            gameLastActivity[gameId] = Date.now();
             console.log(`User ${socket.id} joined game ${gameId} as ${role}`);
 
             const game = await Game.findById(gameId)
@@ -42,8 +89,22 @@ module.exports = (io) => {
                 .populate('player2Id', 'username');
             if (game) {
                 socket.emit('game_state', game);
-                // If crowd turn, send current timer/votes?
+                socket.emit('game_state', game);
+
+                // RESUME LOGIC: Restore suspended state if memory is empty
                 if (game.currentTurn === 'crowd') {
+                    // If no votes in memory, check if we have saved votes in DB
+                    if ((!gameVotes[gameId] || Object.keys(gameVotes[gameId]).length === 0) && game.savedVotes && game.savedVotes.size > 0) {
+                        console.log(`Resuming game ${gameId} from DB state.`);
+                        gameVotes[gameId] = Object.fromEntries(game.savedVotes);
+
+                        // Restore timer if applicable
+                        if (game.savedTimeLeft !== null && game.savedTimeLeft !== undefined) {
+                            gameTimeLeft[gameId] = game.savedTimeLeft;
+                            startCrowdTimer(io, gameId); // This will pick up from gameTimeLeft[gameId]
+                        }
+                    }
+
                     // Sync votes
                     if (gameVotes[gameId]) {
                         const count = gameVoters[gameId] ? gameVoters[gameId].size : 0;
@@ -64,6 +125,7 @@ module.exports = (io) => {
         });
 
         socket.on('make_move', async ({ gameId, col }) => {
+            gameLastActivity[gameId] = Date.now();
             // Security: Only authenticated users can make moves
             if (!socket.user) return;
 
@@ -152,6 +214,7 @@ module.exports = (io) => {
         });
 
         socket.on('cast_vote', async ({ gameId, col }) => {
+            gameLastActivity[gameId] = Date.now();
             // Security: Use authenticated user ID if available, otherwise fallback to socket.id
             // Do NOT trust client supplied crowdUserId
             const voterId = socket.user ? socket.user.userId : socket.id;
@@ -172,7 +235,7 @@ module.exports = (io) => {
 
             // Record vote and mark user as voted
             gameVotes[gameId][col]++;
-            console.log(`Vote cast in ${gameId} for col ${col}. Total: ${gameVotes[gameId][col]}`);
+            // console.log(`Vote cast in ${gameId} for col ${col}. Total: ${gameVotes[gameId][col]}`);
             gameVoters[gameId].add(voterId);
 
             // Track unique crowd player (only on first vote ever, not per turn)
@@ -409,6 +472,13 @@ async function resolveCrowdTurn(io, gameId) {
             const savedGame = await game.save();
             io.to(gameId).emit('game_state', savedGame);
             io.to(gameId).emit('last_crowd_move', { col: selectedCol });
+
+            // CLEANUP: Clear saved state from DB now that turn is done
+            if (game.savedVotes || game.savedTimeLeft !== null) {
+                game.savedVotes = {};
+                game.savedTimeLeft = null;
+                await game.save();
+            }
         }
 
         // Clear voters after turn completes
