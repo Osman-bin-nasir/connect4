@@ -26,7 +26,8 @@ const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:3000",
     "https://connect-git-main-ismiles-projects-9aee7083.vercel.app",
-    "https://connect-kmoopjmya-ismiles-projects-9aee7083.vercel.app"
+    "https://connect-kmoopjmya-ismiles-projects-9aee7083.vercel.app",
+    "https://connect-six-jade.vercel.app"
 ];
 
 const corsOptions = {
