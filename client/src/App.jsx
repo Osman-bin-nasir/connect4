@@ -8,9 +8,23 @@ import Dashboard from './pages/Dashboard';
 import GamePage from './pages/GamePage';
 import './App.css';
 
+import { useNavigate } from 'react-router-dom';
+import setupAxios from './axiosSetup';
+
+// Inner component to use useNavigate
+function AxiosInterceptor() {
+  const navigate = useNavigate();
+  // Using useState to ensure it runs only once is cleaner, but useEffect is standard
+  React.useEffect(() => {
+    setupAxios(navigate);
+  }, [navigate]);
+  return null;
+}
+
 function App() {
   return (
     <Router>
+      <AxiosInterceptor />
       <Toaster
         position="top-right"
         toastOptions={{
