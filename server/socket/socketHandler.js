@@ -253,6 +253,24 @@ module.exports = (io) => {
                 votes: gameVotes[gameId],
                 voterCount: gameVoters[gameId].size
             });
+
+            // PERSISTENCE FIX: Save votes to DB immediately
+            // This protects against server restarts wiping memory before GC runs
+            try {
+                // Using updateOne for efficiency, ensuring safe atomic update if possible
+                // Converting object to Map-like structure if needed, but Mongoose handles object->Map
+                await Game.updateOne(
+                    { _id: gameId },
+                    {
+                        $set: {
+                            savedVotes: gameVotes[gameId],
+                            lastActivity: Date.now()
+                        }
+                    }
+                );
+            } catch (err) {
+                console.error(`Failed to persist votes for ${gameId}`, err);
+            }
         });
 
         socket.on('force_crowd_move', async ({ gameId }) => {
