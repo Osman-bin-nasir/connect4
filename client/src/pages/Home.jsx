@@ -203,7 +203,7 @@ function Home() {
                         onClick={handleLoginRedirect}
                         className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 rounded-xl font-bold text-xl shadow-lg hover:scale-105 transition-transform"
                     >
-                        Login to Play as The One
+                        Login to Play
                     </button>
                 )}
 
