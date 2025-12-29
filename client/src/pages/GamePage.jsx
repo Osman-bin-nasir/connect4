@@ -60,6 +60,9 @@ function GamePage() {
                 setLiveGame(data);
             } else {
                 setGame(data);
+                if (data.savedVotes) {
+                    setVotes(data.savedVotes);
+                }
             }
         });
 
@@ -205,6 +208,9 @@ function GamePage() {
             }
 
             setGame(loadedGame);
+            if (loadedGame.savedVotes) {
+                setVotes(loadedGame.savedVotes);
+            }
             setTempCrowdName(loadedGame.crowdName || 'The Crowd');
         } catch (err) {
             console.error('Failed to load game', err);
@@ -672,7 +678,7 @@ function GamePage() {
                         {timer === 'infinite' ? '∞ Infinite Time' : `Time Left: ${timer}s`}
                     </span>
                     <span className="text-sm text-gray-400 font-sans">
-                        Unique Voters: {uniqueVoters}
+                        Unique Voters: {Object.values(votes).reduce((a, b) => a + b, 0)}
                     </span>
                     {timer === 'infinite' && role === 'player' && (
                         <button
