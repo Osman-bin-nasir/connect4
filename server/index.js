@@ -19,6 +19,8 @@ const gameRoutes = require('./routes/game');
 const authRoutes = require('./routes/auth');
 
 const app = express();
+// Enable proxy trust for Railway (required for rate-limiter)
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 const allowedOrigins = [
