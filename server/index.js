@@ -69,6 +69,21 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
 
+app.get('/health', (req, res) => {
+    const dbStatus = mongoose.connection.readyState;
+    const statusMap = {
+        0: 'disconnected',
+        1: 'connected',
+        2: 'connecting',
+        3: 'disconnecting',
+    };
+    res.status(dbStatus === 1 ? 200 : 503).json({
+        status: dbStatus === 1 ? 'ok' : 'error',
+        database: statusMap[dbStatus] || 'unknown',
+        timestamp: new Date().toISOString()
+    });
+});
+
 app.get('/', (req, res) => {
     res.send('Connect 4 Crowd Server Running');
 });
@@ -79,4 +94,5 @@ socketHandler(io);
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Mongo URI Configured: ${!!process.env.MONGO_URI ? 'Yes' : 'No'}`);
 });
