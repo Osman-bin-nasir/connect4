@@ -25,6 +25,7 @@ const server = http.createServer(app);
 
 const allowedOrigins = [
     "https://connect4.jacksucksatlife.com",
+    "https://www.connect4.jacksucksatlife.com",
     "http://localhost:5173",
     "http://localhost:3000",
     "https://connect-git-main-ismiles-projects-9aee7083.vercel.app",
@@ -36,9 +37,10 @@ const corsOptions = {
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.log("Blocked by CORS:", origin); // Log blocked origins for debugging
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -54,10 +56,7 @@ const io = new Server(server, {
     }
 });
 
-app.use(cors({
-    origin: allowedOrigins,
-    credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(limiter);
 app.use(express.json());
 
