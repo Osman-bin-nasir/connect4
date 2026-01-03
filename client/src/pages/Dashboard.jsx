@@ -13,7 +13,7 @@ function Dashboard() {
     const [isCreating, setIsCreating] = useState(false);
     const [newGameName, setNewGameName] = useState('');
     const [newCrowdName, setNewCrowdName] = useState('The Crowd');
-    const [selectedTime, setSelectedTime] = useState(30);
+    const [selectedTime, setSelectedTime] = useState(0);
     const [isPublic, setIsPublic] = useState(true);
     const [gameMode, setGameMode] = useState('crowd');
     const [aiDifficulty, setAiDifficulty] = useState(3);
