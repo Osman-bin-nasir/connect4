@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
-import { Heart, ArrowLeft, Share2, Play, Pause, SkipBack, SkipForward, FastForward, Rewind, Film, XCircle, Sparkles, Check, X, Users } from 'lucide-react';
+import { Heart, ArrowLeft, Share2, Play, Pause, SkipBack, SkipForward, FastForward, Rewind, Film, XCircle, Sparkles, Check, X, Users, Copy, QrCode } from 'lucide-react';
+import QRCode from "react-qr-code";
 
 import Board from '../components/Board';
 import axios from 'axios';
@@ -29,6 +30,7 @@ function GamePage() {
     const [isHearted, setIsHearted] = useState(false);
     const [isEditingCrowdName, setIsEditingCrowdName] = useState(false);
     const [tempCrowdName, setTempCrowdName] = useState('The Crowd');
+    const [showInviteModal, setShowInviteModal] = useState(false);
 
     const [stats, setStats] = useState({ player1Wins: 0, player2Wins: 0 });
     const [rematchRequests, setRematchRequests] = useState([]);
@@ -317,7 +319,13 @@ function GamePage() {
 
     const handleShare = () => {
         navigator.clipboard.writeText(window.location.href);
-        toast.success('Game link copied! Share it with the crowd!');
+        toast.success('Link copied! Scan QR to join on mobile.');
+        setShowInviteModal(true);
+    };
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard!');
     };
 
     const handleCrowdNameUpdate = async () => {
@@ -725,6 +733,51 @@ function GamePage() {
                     >
                         <XCircle className="w-5 h-5" /> Return to Live
                     </button>
+                </div>
+            )}
+
+            {/* Invite Modal */}
+            {showInviteModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => setShowInviteModal(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-2">
+                                Invite the Crowd!
+                            </h3>
+                            <p className="text-gray-400 text-sm">
+                                Scan this QR code to join the game instantly.
+                            </p>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-xl mx-auto mb-6 w-fit shadow-lg shadow-white/5">
+                            <QRCode
+                                value={window.location.href}
+                                size={200}
+                                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                viewBox={`0 0 256 256`}
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-xs text-gray-400 font-mono truncate text-center select-all">
+                                {window.location.href}
+                            </div>
+                            <button
+                                onClick={copyToClipboard}
+                                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                            >
+                                <Copy className="w-5 h-5" />
+                                Copy Link
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
