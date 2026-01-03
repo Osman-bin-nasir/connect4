@@ -12,7 +12,7 @@ router.post('/', authenticateToken, async (req, res) => {
         const userId = req.user.userId;
 
         // fallback to 30 only if undefined, allowing 0
-        const duration = (turnDuration !== undefined && turnDuration !== null) ? turnDuration : 30;
+        const duration = (turnDuration !== undefined && turnDuration !== null) ? turnDuration : 0;
 
         const gameData = {
             turnDuration: duration,

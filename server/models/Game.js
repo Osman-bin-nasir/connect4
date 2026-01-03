@@ -9,7 +9,7 @@ const gameSchema = new mongoose.Schema({
     crowdId: { type: String, default: 'crowd' },
     crowdName: { type: String, default: 'The Crowd' },
     aiDifficulty: { type: Number, min: 1, max: 6, default: 3 }, // AI minimax depth (1=easy, 6=hard)
-    turnDuration: { type: Number, default: 30 }, // Seconds. 0 for infinite.
+    turnDuration: { type: Number, default: 0 }, // Seconds. 0 for infinite.
     // 6 rows, 7 columns. 0=empty, 1=player/player1, 2=crowd/player2/ai
     board: {
         type: [[Number]],
