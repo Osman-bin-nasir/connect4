@@ -43,7 +43,7 @@ function Dashboard() {
             const res = await axios.get(`${API_URL}/api/games/user/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setGames(res.data);
+            setGames(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Failed to fetch games', err);
             toast.error('Failed to load games');

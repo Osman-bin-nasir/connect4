@@ -452,7 +452,7 @@ function GamePage() {
 
     // Determine which board to display
     const displayBoard = isReplaying
-        ? reconstructBoard((game.moves || []).slice(0, replayIndex))
+        ? reconstructBoard((Array.isArray(game.moves) ? game.moves : []).slice(0, replayIndex))
         : game.board;
 
     const hasHistory = game.moves && game.moves.length > 0;

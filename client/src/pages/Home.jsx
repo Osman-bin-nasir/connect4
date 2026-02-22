@@ -40,7 +40,7 @@ function Home() {
             const res = await axios.get(`${API_URL}/api/games/my-hearts`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setUserHearts(res.data);
+            setUserHearts(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Failed to fetch user hearts', err);
         }
@@ -49,7 +49,7 @@ function Home() {
     const fetchLeaderboard = async () => {
         try {
             const res = await axios.get(`${API_URL}/api/games/leaderboard`);
-            setLeaderboard(res.data);
+            setLeaderboard(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Failed to fetch leaderboard', err);
         }
@@ -58,7 +58,7 @@ function Home() {
     const fetchPopularGames = async () => {
         try {
             const res = await axios.get(`${API_URL}/api/games/popular`);
-            setPopularGames(res.data);
+            setPopularGames(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Failed to fetch popular games', err);
         }
@@ -257,7 +257,7 @@ function Home() {
                         </div>
                     ) : popularGames && popularGames.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-                            {popularGames.slice(0, 6).map(renderGameCard)}
+                            {(Array.isArray(popularGames) ? popularGames : []).slice(0, 6).map(renderGameCard)}
                         </div>
                     ) : (
                         <div className="text-center text-gray-400 bg-gray-800/40 p-12 rounded-xl backdrop-blur-sm border border-gray-800">
