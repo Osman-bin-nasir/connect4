@@ -61,9 +61,6 @@ router.post('/signup', authLimiter, async (req, res) => {
 
         res.status(201).json({ user: userResponse, token });
     } catch (err) {
-        if (err.code === 11000) {
-            return res.status(400).json({ error: 'Email already registered' });
-        }
         res.status(500).json({ error: err.message });
     }
 });

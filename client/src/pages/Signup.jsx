@@ -9,10 +9,13 @@ function Signup() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (isLoading) return;
 
         if (!username || !email || !password || !confirmPassword) {
             toast.error('Please fill in all fields');
@@ -29,6 +32,7 @@ function Signup() {
             return;
         }
 
+        setIsLoading(true);
         try {
             const res = await axios.post(`${API_URL}/api/auth/signup`, {
                 username,
@@ -49,6 +53,8 @@ function Signup() {
             navigate('/dashboard');
         } catch (err) {
             toast.error(err.response?.data?.error || 'Signup failed');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -107,9 +113,10 @@ function Signup() {
 
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-red-600 to-red-500 px-6 py-3 rounded-xl font-bold text-lg shadow-lg hover:scale-105 transition-transform"
+                        disabled={isLoading}
+                        className={`w-full bg-gradient-to-r from-red-600 to-red-500 px-6 py-3 rounded-xl font-bold text-lg shadow-lg transition-transform ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
                     >
-                        Create Account
+                        {isLoading ? 'Creating Account...' : 'Create Account'}
                     </button>
                 </form>
 
