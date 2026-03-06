@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_do_not_use_in_prod';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 // Strict Auth Limiter
 const authLimiter = rateLimit({
@@ -49,7 +50,7 @@ router.post('/signup', authLimiter, async (req, res) => {
         await user.save();
 
         // Generate token
-        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
         // Return user without password
         const userResponse = {
@@ -91,7 +92,7 @@ router.post('/login', authLimiter, async (req, res) => {
         }
 
         // Generate token
-        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
         // Return user without password
         const userResponse = {
