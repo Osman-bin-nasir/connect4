@@ -1,11 +1,121 @@
 @import "tailwindcss";
 
+/* Custom fonts for a premium aesthetic */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@theme {
+    /* Define some custom theme extensions here if needed, like fonts */
+    --font-sans: 'Outfit', system-ui, sans-serif;
+    --font-heading: 'Space Grotesk', system-ui, sans-serif;
+}
+
+:root {
+    --bg-base: #030712;
+    /* Deep slate-950 */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+}
+
 html,
 body,
 #root {
+    font-family: var(--font-sans);
     font-synthesis-weight: none;
     height: 100%;
     margin: 0;
-    background-color: #111827;
-    /* gray-900 */
+    color: var(--text-primary);
+    background-color: var(--bg-base);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+}
+
+/* Custom Scrollbar for a polished look */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-panel-hover:hover {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Animations */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+.animate-pulse-glow {
+    animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Text Colors (formerly gradients) */
+.text-gradient-primary {
+    color: #f59e0b;
+}
+
+.text-gradient-secondary {
+    color: #3b82f6;
 }
