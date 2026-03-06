@@ -648,11 +648,11 @@ function GamePage() {
                     </div>
                 )}
 
-                {/* Game Status Board Container - Fixed height prevents layout shift only in crowd mode, shrinks dynamically when game completed */}
-                <div className={`mb-6 sm:mb-8 w-full flex justify-center transition-all duration-500 ease-in-out ${gameMode === 'crowd' && game.status !== 'completed' ? 'h-[190px] sm:h-[200px]' : ''}`}>
-                    <div className={`bg-gray-800 rounded-xl border border-gray-700 shadow-lg text-center w-full max-w-xl flex flex-col h-full overflow-hidden relative transition-all duration-500 ease-in-out ${game.status !== 'completed' ? 'min-h-[100px]' : ''}`}>
-                        {/* Status Message Section - flex-1 allows dynamic centering */}
-                        <div className={`flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${game.status !== 'completed' ? 'flex-1 p-4' : 'py-5 px-4'}`}>
+                {/* Game Status Board Container - No fixed heights to completely decouple layout logic */}
+                <div className="mb-6 sm:mb-8 w-full flex justify-center">
+                    <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-lg text-center w-full max-w-xl flex flex-col overflow-hidden relative">
+                        {/* Status Message Section */}
+                        <div className="flex flex-col items-center justify-center py-4 sm:py-5 px-4 transition-all duration-300">
                             <h2 className="text-xl sm:text-2xl font-bold transition-colors duration-300" style={{
                                 color: game.status === 'completed'
                                     ? (game.winner === 'player' ? '#f43f5e' : game.winner === 'player2' || game.winner === 'crowd' ? '#eab308' : '#9ca3af')
@@ -668,47 +668,6 @@ function GamePage() {
 
                         {/* Adaptive Controls Area */}
                         <AnimatePresence>
-                            {/* Crowd Stats */}
-                            {gameMode === 'crowd' && game.status !== 'completed' && game.currentTurn === 'crowd' && timer !== null && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="px-4 pb-4 overflow-hidden"
-                                >
-                                    <div className="flex flex-col items-center gap-2 sm:gap-3 pt-3 border-t border-gray-700/50">
-                                        <div className="flex justify-center gap-3 w-full">
-                                            <div className="bg-gray-900/50 p-2 sm:p-2.5 rounded-xl border border-gray-700/50 flex-1">
-                                                <div className="text-[10px] font-bold text-gray-500 uppercase mb-0.5 flex items-center justify-center gap-1.5 leading-none">
-                                                    <Users className="w-3 h-3" /> Participants
-                                                </div>
-                                                <div className="text-xl sm:text-2xl font-bold text-yellow-500">
-                                                    {Object.values(votes).reduce((a, b) => a + b, 0)}
-                                                </div>
-                                            </div>
-                                            <div className="bg-gray-900/50 p-2 sm:p-2.5 rounded-xl border border-gray-700/50 flex-1">
-                                                <div className="text-[10px] font-bold text-gray-500 uppercase mb-0.5 leading-none">
-                                                    Time Left
-                                                </div>
-                                                <div className={`text-xl sm:text-2xl font-bold ${timer === 'infinite' ? 'text-blue-400' : timer <= 5 ? 'text-red-500' : 'text-green-500'}`}>
-                                                    {timer === 'infinite' ? '∞' : `${timer}s`}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {timer === 'infinite' && role === 'player' && (
-                                            <button
-                                                onClick={handleForceMove}
-                                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
-                                            >
-                                                Force Crowd Move <Play className="w-3.5 h-3.5" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            )}
-
                             {/* Rematch Button */}
                             {game.status === 'completed' && gameMode === '1v1' && (role === 'player' || role === 'player2') && (
                                 <motion.div
@@ -738,13 +697,60 @@ function GamePage() {
                 </div>
 
                 {/* The Main Board */}
-                <div className="w-full flex justify-center mb-12 relative z-20">
+                <div className="w-full flex justify-center mb-8 relative z-20">
                     <Board
                         board={displayBoard}
                         onColumnClick={handleColumnClick}
                         votes={role === 'crowd' && gameMode === 'crowd' && !isReplaying ? votes : null}
                     />
                 </div>
+
+                {/* Crowd Mode Actions Panel (Under the Board) */}
+                {gameMode === 'crowd' && game.status !== 'completed' && (
+                    <div className="w-full flex justify-center mb-12 px-4">
+                        <AnimatePresence mode="popLayout">
+                            {game.currentTurn === 'crowd' && timer !== null && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="w-full max-w-md bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-4"
+                                >
+                                    <div className="flex flex-col items-center gap-2 sm:gap-3">
+                                        <div className="flex justify-center gap-3 w-full">
+                                            <div className="bg-gray-900/50 p-2 sm:p-2.5 rounded-xl border border-gray-700 flex-1 flex flex-col items-center">
+                                                <div className="text-[10px] font-bold text-gray-500 uppercase mb-0.5 flex items-center justify-center gap-1.5 leading-none">
+                                                    <Users className="w-3 h-3" /> Participants
+                                                </div>
+                                                <div className="text-xl sm:text-2xl font-bold text-yellow-500">
+                                                    {Object.values(votes).reduce((a, b) => a + b, 0)}
+                                                </div>
+                                            </div>
+                                            <div className="bg-gray-900/50 p-2 sm:p-2.5 rounded-xl border border-gray-700 flex-1 flex flex-col items-center">
+                                                <div className="text-[10px] font-bold text-gray-500 uppercase mb-0.5 leading-none">
+                                                    Time Left
+                                                </div>
+                                                <div className={`text-xl sm:text-2xl font-bold ${timer === 'infinite' ? 'text-blue-400' : timer <= 5 ? 'text-red-500' : 'text-green-500'}`}>
+                                                    {timer === 'infinite' ? '∞' : `${timer}s`}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {timer === 'infinite' && role === 'player' && (
+                                            <button
+                                                onClick={handleForceMove}
+                                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                Force Crowd Move <Play className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                )}
 
                 {/* Footer Status */}
                 <div className="text-center bg-gray-800 px-6 py-4 rounded-xl border border-gray-700 max-w-md w-full mx-auto mb-20">
