@@ -522,39 +522,39 @@ function GamePage() {
                 </AnimatePresence>
 
                 {/* Player Legend Cards */}
-                <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+                <div className="flex flex-row justify-center gap-2 sm:gap-4 mb-6 sm:mb-8">
                     {/* Player 1 Card */}
-                    <div className="bg-gray-800 border-l-4 border-red-500 p-4 rounded-xl flex-1 flex items-center justify-between shadow-md">
-                        <div className="flex items-center gap-4">
-                            <div className="w-8 h-8 rounded-full bg-red-500 shrink-0"></div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Player 1</span>
-                                <span className="font-bold text-white text-lg truncate max-w-[120px]">{player1Name}</span>
+                    <div className="bg-gray-800 border-l-4 border-red-500 p-2 sm:p-4 rounded-xl flex-1 flex items-center justify-between shadow-md min-w-0">
+                        <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+                            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-full bg-red-500 shrink-0"></div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[9px] sm:text-[10px] uppercase font-bold text-gray-500 tracking-wider truncate">Player 1</span>
+                                <span className="font-bold text-white text-sm sm:text-lg truncate max-w-[80px] sm:max-w-[120px]">{player1Name}</span>
                             </div>
                         </div>
                         {gameMode === '1v1' && (
-                            <div className="text-xl font-bold text-red-400 bg-red-900/30 px-3 py-1 rounded-lg">
+                            <div className="text-sm sm:text-xl font-bold text-red-400 bg-red-900/30 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg ml-2 shrink-0">
                                 {stats.player1Wins || 0}
                             </div>
                         )}
                     </div>
 
                     {/* Player 2 / Crowd / AI Card */}
-                    <div className="bg-gray-800 border-l-4 border-yellow-500 p-4 rounded-xl flex-1 flex items-center justify-between shadow-md">
-                        <div className="flex items-center gap-4 w-full">
-                            <div className="w-8 h-8 rounded-full bg-yellow-500 shrink-0"></div>
-                            <div className="flex flex-col w-full">
-                                <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+                    <div className="bg-gray-800 border-l-4 border-yellow-500 p-2 sm:p-4 rounded-xl flex-1 flex items-center justify-between shadow-md min-w-0">
+                        <div className="flex items-center gap-2 sm:gap-4 w-full overflow-hidden">
+                            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-full bg-yellow-500 shrink-0"></div>
+                            <div className="flex flex-col w-full min-w-0">
+                                <span className="text-[9px] sm:text-[10px] uppercase font-bold text-gray-500 tracking-wider truncate">
                                     {gameMode === 'ai' ? 'AI' : gameMode === '1v1' ? 'Player 2' : 'The Crowd'}
                                 </span>
 
                                 {isEditingCrowdName && gameMode === 'crowd' ? (
-                                    <div className="flex gap-2 w-full mt-1">
+                                    <div className="flex gap-2 w-full mt-0.5 sm:mt-1">
                                         <input
                                             type="text"
                                             value={tempCrowdName}
                                             onChange={(e) => setTempCrowdName(e.target.value)}
-                                            className="h-8 bg-gray-900 border border-yellow-500/50 text-white px-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-full"
+                                            className="h-6 sm:h-8 bg-gray-900 border border-yellow-500/50 text-white px-1 sm:px-2 rounded text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-full"
                                             autoFocus
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') handleCrowdNameUpdate();
@@ -571,7 +571,7 @@ function GamePage() {
                                     </div>
                                 ) : (
                                     <span
-                                        className={`font-bold text-white text-lg truncate max-w-[120px] ${role === 'player' && gameMode === 'crowd'
+                                        className={`font-bold text-white text-sm sm:text-lg truncate max-w-[80px] sm:max-w-[120px] ${role === 'player' && gameMode === 'crowd'
                                             ? 'cursor-pointer hover:text-yellow-400 hover:underline'
                                             : ''
                                             }`}
@@ -586,7 +586,7 @@ function GamePage() {
                             </div>
                         </div>
                         {gameMode === '1v1' && (
-                            <div className="text-xl font-bold text-yellow-500 bg-yellow-900/30 px-3 py-1 rounded-lg">
+                            <div className="text-sm sm:text-xl font-bold text-yellow-500 bg-yellow-900/30 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg ml-2 shrink-0">
                                 {stats.player2Wins || 0}
                             </div>
                         )}
@@ -648,12 +648,12 @@ function GamePage() {
                     </div>
                 )}
 
-                {/* Game Status Board */}
-                <div className="mb-8 w-full">
-                    <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-lg text-center max-w-xl mx-auto flex flex-col min-h-[200px] overflow-hidden">
-                        {/* Status Message Section - Heading stays centered relative to its own flex-1 area */}
-                        <div className="flex-1 flex flex-col items-center justify-center p-6">
-                            <h2 className="text-2xl font-bold transition-all duration-300" style={{
+                {/* Game Status Board Container - Fixed height prevents layout shift only in crowd mode, shrinks dynamically when game completed */}
+                <div className={`mb-6 sm:mb-8 w-full flex justify-center transition-all duration-500 ease-in-out ${gameMode === 'crowd' && game.status !== 'completed' ? 'h-[190px] sm:h-[200px]' : ''}`}>
+                    <div className={`bg-gray-800 rounded-xl border border-gray-700 shadow-lg text-center w-full max-w-xl flex flex-col h-full overflow-hidden relative transition-all duration-500 ease-in-out ${game.status !== 'completed' ? 'min-h-[100px]' : ''}`}>
+                        {/* Status Message Section - flex-1 allows dynamic centering */}
+                        <div className={`flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${game.status !== 'completed' ? 'flex-1 p-4' : 'py-5 px-4'}`}>
+                            <h2 className="text-xl sm:text-2xl font-bold transition-colors duration-300" style={{
                                 color: game.status === 'completed'
                                     ? (game.winner === 'player' ? '#f43f5e' : game.winner === 'player2' || game.winner === 'crowd' ? '#eab308' : '#9ca3af')
                                     : (game.currentTurn === 'player' ? '#f43f5e' : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? '#eab308' : '#818cf8')
@@ -666,57 +666,74 @@ function GamePage() {
                             </h2>
                         </div>
 
-                        {/* Crowd stats - Reserved space in flow to prevent layout shift */}
-                        {gameMode === 'crowd' && game.status !== 'completed' && (
-                            <div className={`px-6 pb-6 mt-[-10px] transition-all duration-300 ${game.currentTurn === 'crowd' && timer !== null ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
-                                <div className="flex flex-col items-center gap-4 pt-4 border-t border-gray-700/50">
-                                    <div className="flex justify-center gap-4 w-full">
-                                        <div className="bg-gray-900/50 p-3 rounded-xl border border-gray-700/50 flex-1">
-                                            <div className="text-[10px] font-bold text-gray-500 uppercase mb-1 flex items-center justify-center gap-1.5 leading-none">
-                                                <Users className="w-3 h-3" /> Participants
+                        {/* Adaptive Controls Area */}
+                        <AnimatePresence>
+                            {/* Crowd Stats */}
+                            {gameMode === 'crowd' && game.status !== 'completed' && game.currentTurn === 'crowd' && timer !== null && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="px-4 pb-4 overflow-hidden"
+                                >
+                                    <div className="flex flex-col items-center gap-2 sm:gap-3 pt-3 border-t border-gray-700/50">
+                                        <div className="flex justify-center gap-3 w-full">
+                                            <div className="bg-gray-900/50 p-2 sm:p-2.5 rounded-xl border border-gray-700/50 flex-1">
+                                                <div className="text-[10px] font-bold text-gray-500 uppercase mb-0.5 flex items-center justify-center gap-1.5 leading-none">
+                                                    <Users className="w-3 h-3" /> Participants
+                                                </div>
+                                                <div className="text-xl sm:text-2xl font-bold text-yellow-500">
+                                                    {Object.values(votes).reduce((a, b) => a + b, 0)}
+                                                </div>
                                             </div>
-                                            <div className="text-2xl font-bold text-yellow-500">
-                                                {Object.values(votes).reduce((a, b) => a + b, 0)}
+                                            <div className="bg-gray-900/50 p-2 sm:p-2.5 rounded-xl border border-gray-700/50 flex-1">
+                                                <div className="text-[10px] font-bold text-gray-500 uppercase mb-0.5 leading-none">
+                                                    Time Left
+                                                </div>
+                                                <div className={`text-xl sm:text-2xl font-bold ${timer === 'infinite' ? 'text-blue-400' : timer <= 5 ? 'text-red-500' : 'text-green-500'}`}>
+                                                    {timer === 'infinite' ? '∞' : `${timer}s`}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="bg-gray-900/50 p-3 rounded-xl border border-gray-700/50 flex-1">
-                                            <div className="text-[10px] font-bold text-gray-500 uppercase mb-1 leading-none">
-                                                Time Left
-                                            </div>
-                                            <div className={`text-2xl font-bold ${timer === 'infinite' ? 'text-blue-400' : timer <= 5 ? 'text-red-500' : 'text-green-500'}`}>
-                                                {timer === 'infinite' ? '∞' : `${timer}s`}
-                                            </div>
-                                        </div>
+
+                                        {timer === 'infinite' && role === 'player' && (
+                                            <button
+                                                onClick={handleForceMove}
+                                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                Force Crowd Move <Play className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
                                     </div>
+                                </motion.div>
+                            )}
 
-                                    {timer === 'infinite' && role === 'player' && (
-                                        <button
-                                            onClick={handleForceMove}
-                                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            Force Crowd Move <Play className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Rematch Button - Stable Position */}
-                        {game.status === 'completed' && gameMode === '1v1' && (role === 'player' || role === 'player2') && (
-                            <div className="mt-4 pt-4 border-t border-gray-700 flex justify-center w-full">
-                                {rematchRequests.includes(userId) ? (
-                                    <span className="text-yellow-500 font-bold text-sm">Awaiting opponent...</span>
-                                ) : (
-                                    <button
-                                        onClick={handleRematch}
-                                        className="bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2"
-                                    >
-                                        <Play className="w-4 h-4 fill-current" />
-                                        {rematchRequests.length > 0 ? "Opponent wants Rematch!" : "Play Again"}
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                            {/* Rematch Button */}
+                            {game.status === 'completed' && gameMode === '1v1' && (role === 'player' || role === 'player2') && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="px-4 pb-4 sm:px-6 sm:pb-6 overflow-hidden"
+                                >
+                                    <div className="pt-4 border-t border-gray-700 flex justify-center w-full">
+                                        {rematchRequests.includes(userId) ? (
+                                            <span className="text-yellow-500 font-bold text-sm py-1.5 sm:py-2.5">Awaiting opponent...</span>
+                                        ) : (
+                                            <button
+                                                onClick={handleRematch}
+                                                className="bg-green-600 hover:bg-green-500 text-white px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2 text-sm sm:text-base"
+                                            >
+                                                <Play className="w-4 h-4 fill-current" />
+                                                {rematchRequests.length > 0 ? "Opponent wants Rematch!" : "Play Again"}
+                                            </button>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
