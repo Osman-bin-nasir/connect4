@@ -27,7 +27,7 @@ function GameModeSelector({ selectedMode, onModeChange }) {
             title: 'vs AI',
             icon: Bot,
             description: 'Test your skills against the computer.',
-            color: 'purple'
+            color: 'blue'
         }
     ];
 
@@ -44,12 +44,6 @@ function GameModeSelector({ selectedMode, onModeChange }) {
                 hover: 'hover:bg-blue-500/10 hover:border-blue-500/40',
                 text: 'text-blue-400',
                 icon: 'text-blue-500'
-            },
-            purple: {
-                selected: 'bg-purple-500/15 border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.2)]',
-                hover: 'hover:bg-purple-500/10 hover:border-purple-500/40',
-                text: 'text-purple-400',
-                icon: 'text-purple-500'
             }
         };
 

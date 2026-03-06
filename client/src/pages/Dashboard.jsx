@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Heart, Globe, Lock, Users, Clock, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, Globe, Lock, Users, Clock, Zap, LogOut, Plus, Play, Edit2, Trash2, ArrowRight } from 'lucide-react';
 import API_URL from '../config';
 import GameModeSelector from '../components/GameModeSelector';
 
@@ -46,7 +47,7 @@ function Dashboard() {
             setGames(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Failed to fetch games', err);
-            toast.error('Failed to load games');
+            toast.error('Failed to load games', { style: { background: '#ef4444', color: '#fff' } });
         } finally {
             setIsLoading(false);
         }
@@ -54,7 +55,7 @@ function Dashboard() {
 
     const handleCreateGame = async () => {
         if (!newGameName.trim()) {
-            toast.error('Please enter a game name');
+            toast.error('Please enter a game name', { style: { background: '#334155', color: '#fff' } });
             return;
         }
 
@@ -81,7 +82,7 @@ function Dashboard() {
             const successMessage = gameMode === '1v1'
                 ? 'Game created! Waiting for opponent...'
                 : 'Game created!';
-            toast.success(successMessage);
+            toast.success(successMessage, { icon: '✨', style: { background: '#334155', color: '#fff' } });
 
             setIsCreating(false);
             setNewGameName('');
@@ -91,7 +92,7 @@ function Dashboard() {
             setAiDifficulty(3);
             navigate(`/game/${res.data._id}`);
         } catch (err) {
-            toast.error('Failed to create game ');
+            toast.error('Failed to create game', { style: { background: '#ef4444', color: '#fff' } });
         }
     };
 
@@ -109,19 +110,19 @@ function Dashboard() {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            toast.success('Game renamed!');
+            toast.success('Game renamed!', { style: { background: '#334155', color: '#fff' } });
             setEditingId(null);
             fetchGames();
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Failed to rename game');
+            toast.error(err.response?.data?.error || 'Failed to rename game', { style: { background: '#ef4444', color: '#fff' } });
         }
     };
 
     const handleDelete = async (gameId, gameName) => {
         // Show confirmation toast
         toast((t) => (
-            <div className="flex flex-col gap-2">
-                <p className="font-semibold">Delete "{gameName}"?</p>
+            <div className="flex flex-col gap-3">
+                <p className="font-semibold text-slate-800">Delete "{gameName}"?</p>
                 <div className="flex gap-2">
                     <button
                         onClick={async () => {
@@ -131,349 +132,471 @@ function Dashboard() {
                                 await axios.delete(`${API_URL}/api/games/${gameId}`, {
                                     headers: { Authorization: `Bearer ${token}` }
                                 });
-                                toast.success('Game deleted!');
+                                toast.success('Game deleted!', { icon: '🗑️', style: { background: '#334155', color: '#fff' } });
                                 fetchGames();
                             } catch (err) {
                                 toast.error(err.response?.data?.error || 'Failed to delete game');
                             }
                         }}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600"
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors flex-1"
                     >
                         Delete
                     </button>
                     <button
                         onClick={() => toast.dismiss(t.id)}
-                        className="bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-600"
+                        className="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-300 transition-colors flex-1"
                     >
                         Cancel
                     </button>
                 </div>
             </div>
         ), {
-            duration: 5000
+            duration: 5000,
+            style: { background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1' }
         });
     };
 
     const handleLogout = () => {
         localStorage.clear();
-        toast.success('Logged out');
+        toast.success('Logged out safely', { icon: '👋', style: { background: '#334155', color: '#fff' } });
         navigate('/');
     };
 
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+    };
+
     return (
-        <div className="min-h-screen bg-gray-900 text-white py-8 font-sans">
-            <div className="max-w-6xl mx-auto px-4">
+        <div className="min-h-screen pt-20 pb-12 px-4 relative overflow-x-hidden text-slate-200">
+            {/* Background elements */}
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10">
+                <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-10 animate-float"></div>
+                <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-rose-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-10 animate-float" style={{ animationDelay: '2s' }}></div>
+            </div>
+
+            <div className="max-w-6xl mx-auto">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-12">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12"
+                >
                     <div>
-                        <h1 className="text-3xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-yellow-500">
+                        <h1 className="text-4xl md:text-5xl font-black text-blue-400 mb-2">
                             Dashboard
                         </h1>
-                        <p className="text-gray-400 mt-2 text-sm md:text-base">Welcome back, {username}!</p>
+                        <p className="text-slate-400 text-lg">Welcome back, <span className="text-white font-bold">{username}</span></p>
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="bg-gray-700 px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                    >
-                        Logout
-                    </button>
-                </div>
 
-                {/* Join as Crowd */}
-                <div className="mb-8 bg-gray-800 p-6 rounded-xl border border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h3 className="text-xl font-bold">Join Someone Else's Game</h3>
-                        <p className="text-gray-400 text-sm mt-1">Want to play as part of the crowd instead?</p>
+                    <div className="flex gap-4 w-full md:w-auto">
+                        <Link to="/" className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-slate-300 px-5 py-2.5 rounded-xl transition-all backdrop-blur-sm">
+                            <Globe className="w-4 h-4" /> Home
+                        </Link>
+                        <button
+                            onClick={handleLogout}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-5 py-2.5 rounded-xl transition-all backdrop-blur-sm"
+                        >
+                            <LogOut className="w-4 h-4" /> Logout
+                        </button>
                     </div>
-                    <Link to="/" className="w-full md:w-auto text-center bg-gray-700 hover:bg-gray-600 text-yellow-500 hover:text-yellow-400 px-6 py-3 md:py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
-                        Join as Crowd →
-                    </Link>
-                </div>
+                </motion.div>
 
-                {/* Create Game Button */}
-                {!isCreating && (
-                    <button
-                        onClick={() => setIsCreating(true)}
-                        className="mb-8 bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 rounded-xl font-bold text-xl shadow-lg hover:scale-105 transition-transform"
-                    >
-                        + Create New Game
-                    </button>
-                )}
+                {/* Create Game Trigger */}
+                <AnimatePresence>
+                    {!isCreating && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9, height: 0, margin: 0 }}
+                            className="mb-10"
+                        >
+                            <button
+                                onClick={() => setIsCreating(true)}
+                                className="w-full relative group overflow-hidden rounded-2xl p-1"
+                            >
+                                <div className="absolute inset-0 bg-blue-500 opacity-70 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+                                <div className="relative bg-slate-900 border border-white/10 px-8 py-6 rounded-xl flex items-center justify-center gap-3 backdrop-blur-xl group-hover:bg-slate-900/80 transition-colors">
+                                    <div className="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform">
+                                        <Plus className="w-6 h-6 text-blue-400" />
+                                    </div>
+                                    <span className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors">Create New Game</span>
+                                </div>
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-                {isCreating && (
-                    <div className="mb-12 bg-gray-800/80 backdrop-blur-md p-6 md:p-8 rounded-2xl border border-gray-700 shadow-2xl animate-fade-in-up">
-                        <h2 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-                            Configure New Game
-                        </h2>
+                {/* Create Game Form */}
+                <AnimatePresence>
+                    {isCreating && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20, height: 0 }}
+                            animate={{ opacity: 1, y: 0, height: 'auto' }}
+                            exit={{ opacity: 0, y: -20, height: 0 }}
+                            className="mb-12 overflow-hidden"
+                        >
+                            <div className="glass-panel p-6 md:p-8 rounded-3xl relative border-t border-l border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                                {/* Decorative corner */}
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-bl-full pointer-events-none"></div>
 
-                        {/* Game Mode Selector */}
-                        <div className="mb-6">
-                            <GameModeSelector
-                                selectedMode={gameMode}
-                                onModeChange={setGameMode}
-                            />
-                        </div>
+                                <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-700/50">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                                        <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
+                                        Configure New Game
+                                    </h2>
+                                    <button
+                                        onClick={() => setIsCreating(false)}
+                                        className="text-slate-500 hover:text-white transition-colors p-2"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div className="space-y-2">
-                                <label className="block text-sm font-semibold text-gray-400">Game Name</label>
-                                <input
-                                    type="text"
-                                    value={newGameName}
-                                    onChange={(e) => setNewGameName(e.target.value)}
-                                    className="w-full bg-gray-900/50 text-white px-4 py-3 rounded-xl border border-gray-600 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 outline-none transition-all"
-                                    placeholder="e.g. My Epic Game"
-                                />
-                            </div>
+                                {/* Game Mode Selector */}
+                                <div className="mb-8">
+                                    <GameModeSelector
+                                        selectedMode={gameMode}
+                                        onModeChange={setGameMode}
+                                    />
+                                </div>
 
-                            {/* Crowd Name - only for crowd mode */}
-                            {gameMode === 'crowd' && (
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-gray-400">Crowd Name</label>
-                                    <div className="relative">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-bold text-slate-300 ml-1">Game Name</label>
                                         <input
                                             type="text"
-                                            value={newCrowdName}
-                                            onChange={(e) => setNewCrowdName(e.target.value)}
-                                            className="w-full bg-gray-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-gray-600 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 outline-none transition-all"
-                                            placeholder="The Crowd"
+                                            value={newGameName}
+                                            onChange={(e) => setNewGameName(e.target.value)}
+                                            className="w-full bg-slate-900/60 text-white px-5 py-3.5 rounded-xl border border-slate-700/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-600"
+                                            placeholder="e.g. The Final Stand"
                                         />
-                                        <Users className="w-5 h-5 text-gray-500 absolute left-3 top-3.5" />
+                                    </div>
+
+                                    {/* Mode-specific options - fixed height to prevent layout shift */}
+                                    <div className="min-h-[120px]">
+                                        {gameMode === 'crowd' && (
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-bold text-slate-300 ml-1">Crowd Name</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        value={newCrowdName}
+                                                        onChange={(e) => setNewCrowdName(e.target.value)}
+                                                        className="w-full bg-slate-900/60 text-white pl-12 pr-5 py-3.5 rounded-xl border border-slate-700/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-600"
+                                                        placeholder="The Horde"
+                                                    />
+                                                    <Users className="w-5 h-5 text-slate-500 absolute left-4 top-4" />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {gameMode === 'ai' && (
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-bold text-slate-300 ml-1 flex justify-between">
+                                                    <span>AI Difficulty</span>
+                                                    <span className="text-blue-400">
+                                                        {['Novice', 'Veteran', 'Grandmaster'][Math.floor((aiDifficulty - 1) / 2)]}
+                                                    </span>
+                                                </label>
+                                                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 h-[54px] flex items-center">
+                                                    <input
+                                                        type="range"
+                                                        min="1"
+                                                        max="6"
+                                                        value={aiDifficulty}
+                                                        onChange={(e) => setAiDifficulty(Number(e.target.value))}
+                                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                                    />
+                                                </div>
+                                                <div className="flex justify-between text-xs text-slate-500 px-1 mt-1">
+                                                    <span>Easy</span>
+                                                    <span>Medium</span>
+                                                    <span>Hard</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            )}
 
-                            {/* AI Difficulty - only for AI mode */}
-                            {gameMode === 'ai' && (
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-gray-400">
-                                        AI Difficulty: {['Easy', 'Medium', 'Hard'][Math.floor((aiDifficulty - 1) / 2)]}
-                                    </label>
-                                    <input
-                                        type="range"
-                                        min="1"
-                                        max="6"
-                                        value={aiDifficulty}
-                                        onChange={(e) => setAiDifficulty(Number(e.target.value))}
-                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                                    />
-                                    <div className="flex justify-between text-xs text-gray-500">
-                                        <span>Easy</span>
-                                        <span>Medium</span>
-                                        <span>Hard</span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                    {/* Time Control */}
+                                    <div className="space-y-3">
+                                        <label className="flex items-center gap-2 text-sm font-bold text-slate-300 ml-1">
+                                            <Clock className="w-4 h-4 text-emerald-400" /> Turn Duration
+                                        </label>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            {[10, 30, 60, 0].map((time) => (
+                                                <button
+                                                    key={time}
+                                                    onClick={() => setSelectedTime(time)}
+                                                    className={`relative px-2 py-3.5 rounded-xl font-bold text-sm transition-all border ${selectedTime === time
+                                                        ? 'bg-emerald-600 text-white border-emerald-400/50 shadow-[0_0_15px_rgba(16,185,129,0.3)] ring-1 ring-emerald-400'
+                                                        : 'bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-700 hover:text-slate-300'
+                                                        }`}
+                                                >
+                                                    {time === 0 ? <span className="flex items-center justify-center gap-1.5"><Zap className="w-3.5 h-3.5 text-amber-400" /> Infinite</span> : `${time}s`}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Visibility */}
+                                    <div className="space-y-3">
+                                        <label className="flex items-center gap-2 text-sm font-bold text-slate-300 ml-1">
+                                            <Globe className="w-4 h-4 text-sky-400" /> Visibility
+                                        </label>
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={() => setIsPublic(true)}
+                                                className={`flex-1 p-3.5 rounded-xl border transition-all text-left flex items-center justify-center gap-2 ${isPublic
+                                                    ? 'bg-sky-500/15 border-sky-500/50 text-sky-300 shadow-[0_0_15px_rgba(14,165,233,0.15)] ring-1 ring-sky-500/50'
+                                                    : 'bg-slate-800/50 border-slate-700/50 text-slate-400 hover:bg-slate-700'
+                                                    }`}
+                                            >
+                                                <Globe className="w-4 h-4" /> <span className="font-bold">Public</span>
+                                            </button>
+
+                                            <button
+                                                onClick={() => setIsPublic(false)}
+                                                className={`flex-1 p-3.5 rounded-xl border transition-all text-left flex items-center justify-center gap-2 ${!isPublic
+                                                    ? 'bg-violet-500/15 border-violet-500/50 text-violet-300 shadow-[0_0_15px_rgba(139,92,246,0.15)] ring-1 ring-violet-500/50'
+                                                    : 'bg-slate-800/50 border-slate-700/50 text-slate-400 hover:bg-slate-700'
+                                                    }`}
+                                            >
+                                                <Lock className="w-4 h-4" /> <span className="font-bold">Private</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            )}
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                            {/* Time Control */}
-                            <div className="space-y-3">
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-400">
-                                    <Clock className="w-4 h-4" /> Turn Duration
-                                </label>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    {[10, 30, 60, 0].map((time) => (
-                                        <button
-                                            key={time}
-                                            onClick={() => setSelectedTime(time)}
-                                            className={`relative px-2 py-3 rounded-xl font-bold text-sm transition-all border ${selectedTime === time
-                                                ? 'bg-gradient-to-br from-green-500 to-green-600 text-white border-green-400 shadow-lg shadow-green-500/20 scale-105'
-                                                : 'bg-gray-700/50 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
-                                                }`}
-                                        >
-                                            {time === 0 ? <span className="flex items-center justify-center gap-1"><Zap className="w-3 h-3" /> Infinite</span> : `${time}s`}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Visibility */}
-                            <div className="space-y-3">
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-400">
-                                    <Globe className="w-4 h-4" /> Visibility
-                                </label>
-                                <div className="flex gap-4">
+                                <div className="flex justify-end gap-4 pt-6 border-t border-slate-700/50 mt-8">
                                     <button
-                                        onClick={() => setIsPublic(true)}
-                                        className={`flex-1 p-3 rounded-xl border transition-all text-left group ${isPublic
-                                            ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'
-                                            : 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/50'
-                                            }`}
+                                        onClick={() => {
+                                            setIsCreating(false);
+                                            setNewGameName('');
+                                            setNewCrowdName('The Crowd');
+                                        }}
+                                        className="px-6 py-3 rounded-xl font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                                     >
-                                        <div className={`flex items-center gap-2 font-bold mb-1 ${isPublic ? 'text-blue-400' : 'text-gray-300'}`}>
-                                            <Globe className="w-4 h-4" /> Public
-                                        </div>
-                                        <p className="text-xs text-gray-500 group-hover:text-gray-400">Visible to everyone on the dashboard.</p>
+                                        Cancel
                                     </button>
-
                                     <button
-                                        onClick={() => setIsPublic(false)}
-                                        className={`flex-1 p-3 rounded-xl border transition-all text-left group ${!isPublic
-                                            ? 'bg-purple-500/10 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
-                                            : 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/50'
-                                            }`}
+                                        onClick={handleCreateGame}
+                                        className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] hover:-translate-y-0.5 transition-all flex items-center gap-2"
                                     >
-                                        <div className={`flex items-center gap-2 font-bold mb-1 ${!isPublic ? 'text-purple-400' : 'text-gray-300'}`}>
-                                            <Lock className="w-4 h-4" /> Private
-                                        </div>
-                                        <p className="text-xs text-gray-500 group-hover:text-gray-400">Only accessible via direct link.</p>
+                                        <Plus className="w-5 h-5" /> Deploy Game
                                     </button>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
-                            <button
-                                onClick={() => {
-                                    setIsCreating(false);
-                                    setNewGameName('');
-                                    setNewCrowdName('The Crowd');
-                                }}
-                                className="px-6 py-2.5 rounded-xl font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleCreateGame}
-                                className="bg-gradient-to-r from-yellow-600 to-yellow-500 text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/40 hover:scale-105 transition-all"
-                            >
-                                Create Game
-                            </button>
-                        </div>
-                    </div>
-                )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Games List */}
-                <div>
-                    <h2 className="text-3xl font-bold mb-6">Your Games</h2>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-1.5 h-8 bg-blue-500 rounded-full"></div>
+                        <h2 className="text-3xl font-bold text-white">Active Games</h2>
+                        <span className="ml-2 bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-sm font-bold border border-slate-700">{games.length}</span>
+                    </div>
 
                     {isLoading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {[1, 2, 3].map((n) => (
-                                <div key={n} className="bg-gray-800 p-6 rounded-xl border border-gray-700 h-64 animate-pulse">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <div className="h-8 bg-gray-700 rounded w-1/2"></div>
-                                        <div className="h-6 bg-gray-700 rounded w-1/4"></div>
+                                <div key={n} className="glass-panel p-6 rounded-2xl h-64 animate-pulse">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div className="h-8 bg-slate-700/50 rounded-lg w-1/2"></div>
+                                        <div className="h-6 bg-slate-700/50 rounded-full w-20"></div>
                                     </div>
-                                    <div className="space-y-3">
-                                        <div className="h-4 bg-gray-700 rounded w-3/4"></div>
-                                        <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-                                        <div className="h-4 bg-gray-700 rounded w-2/3"></div>
+                                    <div className="space-y-4">
+                                        <div className="h-4 bg-slate-700/50 rounded w-3/4"></div>
+                                        <div className="h-4 bg-slate-700/50 rounded w-1/2"></div>
+                                        <div className="h-4 bg-slate-700/50 rounded w-2/3"></div>
                                     </div>
-                                    <div className="mt-8 flex gap-2">
-                                        <div className="h-10 bg-gray-700 rounded flex-1"></div>
-                                        <div className="h-10 bg-gray-700 rounded w-20"></div>
-                                        <div className="h-10 bg-gray-700 rounded w-20"></div>
+                                    <div className="mt-8 flex gap-3">
+                                        <div className="h-10 bg-slate-700/50 rounded-lg flex-1"></div>
+                                        <div className="h-10 bg-slate-700/50 rounded-lg w-12"></div>
+                                        <div className="h-10 bg-slate-700/50 rounded-lg w-12"></div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : games.length === 0 ? (
-                        <div className="bg-gray-800 p-12 rounded-xl text-center">
-                            <p className="text-gray-400 text-lg">No games yet. Create one to get started!</p>
+                        <div className="glass-panel p-16 rounded-3xl text-center border-dashed border-2 border-slate-700 flex flex-col items-center">
+                            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                                <Zap className="w-10 h-10 text-slate-600" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">No Active Games</h3>
+                            <p className="text-slate-400 text-lg mb-8 max-w-md">Your command center is empty. Forge a new arena to begin your conquest.</p>
+                            <button
+                                onClick={() => setIsCreating(true)}
+                                className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:-translate-y-1 transition-transform"
+                            >
+                                Get Started
+                            </button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {games.map((game) => (
-                                <div
-                                    key={game._id}
-                                    className="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-yellow-500/50 transition-all"
-                                >
-                                    {editingId === game._id ? (
-                                        <div className="mb-3">
-                                            <input
-                                                type="text"
-                                                value={editingName}
-                                                onChange={(e) => setEditingName(e.target.value)}
-                                                className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-yellow-500 mb-2"
-                                                autoFocus
-                                            />
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleRename(game._id)}
-                                                    className="bg-green-600 px-3 py-1 rounded text-sm font-semibold hover:bg-green-500"
-                                                >
-                                                    Save
-                                                </button>
-                                                <button
-                                                    onClick={() => setEditingId(null)}
-                                                    className="bg-gray-600 px-3 py-1 rounded text-sm font-semibold hover:bg-gray-500"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-between mb-3 gap-2">
-                                            <h3 className="text-2xl font-bold text-yellow-400 flex-1">{game.name}</h3>
-                                            <div className="flex gap-2">
-                                                {/* Game Mode Badge */}
-                                                <span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 font-medium ${game.gameMode === 'ai'
-                                                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                                                    : game.gameMode === '1v1'
-                                                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                                        : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                                                    }`}>
-                                                    {game.gameMode === 'ai' ? '🤖 AI' : game.gameMode === '1v1' ? '👥 1v1' : '🎭 Crowd'}
-                                                </span>
-                                                {/* Visibility Badge */}
-                                                <span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 font-medium ${game.isPublic !== false
-                                                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                                    : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                                    }`}>
-                                                    {game.isPublic !== false ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                                                    {game.isPublic !== false ? 'Public' : 'Private'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
+                        <motion.div
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        >
+                            <AnimatePresence>
+                                {games.map((game) => (
+                                    <motion.div
+                                        variants={itemVariants}
+                                        layout
+                                        key={game._id}
+                                        className="glass-panel p-6 rounded-2xl relative group overflow-hidden border border-slate-700/50 hover:border-blue-500/50 transition-colors flex flex-col h-full"
+                                    >
+                                        {/* Status Glow */}
+                                        <div className={`absolute top-0 right-0 w-32 h-32 blur-[64px] rounded-full -z-10 opacity-20 transition-opacity duration-500 group-hover:opacity-40
+                                            ${game.status === 'active' ? 'bg-emerald-500' : game.status === 'completed' ? 'bg-slate-500' : 'bg-amber-500'}`}
+                                        ></div>
 
-                                    <div className="space-y-2 text-sm text-gray-400 mb-4">
-                                        <p>Status: <span className="capitalize font-semibold">{game.status}</span></p>
-                                        <p>Turn: <span className="font-semibold">{game.currentTurn === 'player' ? username : (game.crowdName || 'The Crowd')}</span></p>
-                                        {game.winner && (
-                                            <p>Winner: <span className="text-green-400 font-semibold">{game.winner === 'player' ? username : (game.crowdName || 'The Crowd')}</span></p>
+                                        {editingId === game._id ? (
+                                            <div className="mb-4 z-10 flex-1">
+                                                <input
+                                                    type="text"
+                                                    value={editingName}
+                                                    onChange={(e) => setEditingName(e.target.value)}
+                                                    className="w-full bg-slate-900 border border-blue-500 text-white px-4 py-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 mb-3 font-bold text-lg"
+                                                    autoFocus
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleRename(game._id)}
+                                                />
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleRename(game._id)}
+                                                        className="flex-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 py-2 rounded-lg text-sm font-bold hover:bg-emerald-600/30 transition-colors"
+                                                    >
+                                                        Save
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setEditingId(null)}
+                                                        className="flex-1 bg-slate-800 text-slate-300 py-2 border border-slate-700 rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col h-full z-10">
+                                                <div className="flex items-start justify-between mb-4 gap-3">
+                                                    <h3 className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2 leading-tight flex-1">
+                                                        {game.name}
+                                                    </h3>
+                                                    <div className="flex flex-col gap-2 items-end shrink-0">
+                                                        {/* Game Mode Badge */}
+                                                        <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${game.gameMode === 'ai'
+                                                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                            : game.gameMode === '1v1'
+                                                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                                : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                                            }`}>
+                                                            {game.gameMode === 'ai' ? '🤖 AI' : game.gameMode === '1v1' ? '👥 1v1' : '🎭 Crowd'}
+                                                        </span>
+                                                        {/* Details Badge */}
+                                                        <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase flex items-center gap-1 ${game.isPublic !== false
+                                                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                            : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                                                            }`}>
+                                                            {game.isPublic !== false ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                                                            {game.isPublic !== false ? 'Public' : 'Private'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2.5 text-sm mb-6 flex-1 text-slate-400 bg-slate-900/40 p-4 rounded-xl border border-slate-800/50">
+                                                    <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                                                        <span className="text-slate-500">Status</span>
+                                                        <span className={`font-bold uppercase tracking-wider text-xs px-2 py-0.5 rounded
+                                                            ${game.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' :
+                                                                game.status === 'completed' ? 'bg-slate-800 text-slate-400' : 'bg-amber-500/10 text-amber-400'}`}
+                                                        >
+                                                            {game.status}
+                                                        </span>
+                                                    </div>
+
+                                                    {game.status !== 'completed' && (
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-slate-500">Turn</span>
+                                                            <span className="font-bold text-white truncate max-w-[120px]">
+                                                                {game.currentTurn === 'player' ? username : (game.crowdName || 'The Crowd')}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {game.winner && (
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-slate-500">Winner</span>
+                                                            <span className="font-bold text-amber-400 truncate max-w-[120px]">
+                                                                {game.winner === 'player' ? username : (game.crowdName || 'The Crowd')}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-800">
+                                                        <div className="flex items-center gap-1.5 font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-lg">
+                                                            <Heart className="w-3.5 h-3.5 fill-current" />
+                                                            <span>{game.heartCount || 0}</span>
+                                                        </div>
+                                                        <span className="text-xs font-mono text-slate-600" title={game._id}>
+                                                            ...{game._id.slice(-6)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-2 relative mt-auto">
+                                                    <button
+                                                        onClick={() => navigate(`/game/${game._id}`)}
+                                                        className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 group/btn flex justify-center items-center gap-2"
+                                                    >
+                                                        <span>{game.status === 'completed' ? 'View Game' : 'Resume'}</span>
+                                                        <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                    </button>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingId(game._id);
+                                                                setEditingName(game.name);
+                                                            }}
+                                                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2.5 rounded-xl transition-all border border-slate-700 relative group/edit"
+                                                            title="Rename"
+                                                        >
+                                                            <Edit2 className="w-5 h-5" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(game._id, game.name)}
+                                                            className="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-500 p-2.5 rounded-xl transition-all"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         )}
-                                        <div className="flex gap-4 mt-2">
-                                            <span className="flex items-center gap-1 font-semibold text-red-400">
-                                                <Heart className="w-4 h-4 fill-red-400" />
-                                                <span>{game.heartCount || 0}</span>
-                                            </span>
-                                        </div>
-                                        <p className="text-xs font-mono bg-gray-900 px-2 py-1 rounded">ID: {game._id}</p>
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => navigate(`/game/${game._id}`)}
-                                            className="flex-1 bg-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-500 transition-colors"
-                                        >
-                                            Resume
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setEditingId(game._id);
-                                                setEditingName(game.name);
-                                            }}
-                                            className="bg-yellow-600 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition-colors"
-                                        >
-                                            Rename
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(game._id, game.name)}
-                                            className="bg-red-600 px-4 py-2 rounded-lg font-semibold hover:bg-red-500 transition-colors"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </motion.div>
                     )}
-                </div>
-
-
+                </motion.div>
             </div>
         </div>
     );

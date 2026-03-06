@@ -2,19 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import API_URL from '../config';
 
-import { Heart, Trophy } from 'lucide-react';
+import { Heart, Trophy, Users, Shield, Zap, CircleChevronRight } from 'lucide-react';
 
 function Home() {
-    const [selectedTime, setSelectedTime] = useState(30);
     const [gameIdInput, setGameIdInput] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userId, setUserId] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
     const [popularGames, setPopularGames] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [userHearts, setUserHearts] = useState([]); // Array of game IDs hearted by user
+    const [userHearts, setUserHearts] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -66,54 +66,27 @@ function Home() {
 
     const handleHeartClick = async (gameId, isHearted) => {
         if (!isLoggedIn) {
-            toast.error('Please log in or create an account to heart a game', {
-                duration: 4000,
-                icon: '💔'
-            });
+            toast.error('Please log in to heart a game', { icon: '💔' });
             return;
         }
 
         try {
             const token = localStorage.getItem('token');
-
-            // Debug: Check if token exists
-            if (!token) {
-                console.error('No token found in localStorage');
-                toast.error('Authentication token not found. Please log in again.');
-                navigate('/login');
-                return;
-            }
-
-            console.log('Token exists, making request...');
-
             if (isHearted) {
-                // Unheart
                 await axios.delete(`${API_URL}/api/games/${gameId}/heart`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                toast.success('Removed from favorites');
                 setUserHearts(prev => prev.filter(id => id !== gameId));
             } else {
-                // Heart
                 await axios.post(`${API_URL}/api/games/${gameId}/heart`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Added to favorites!', { icon: '❤️' });
                 setUserHearts(prev => [...prev, gameId]);
             }
-            // Refresh popular games to update heart counts
             fetchPopularGames();
         } catch (err) {
-            console.error('Heart error:', err);
-            console.error('Error response:', err.response);
-
-            // More specific error messages
-            if (err.response?.status === 401) {
-                toast.error('Session expired. Please log in again.');
-                navigate('/login');
-            } else {
-                toast.error(err.response?.data?.error || 'Failed to update heart');
-            }
+            toast.error('Failed to update heart');
         }
     };
 
@@ -125,8 +98,18 @@ function Home() {
         navigate(`/game/${gameIdInput}`);
     };
 
-    const handleLoginRedirect = () => {
-        navigate('/login');
+    const containerVariants = {
+        hidden: { opacity: 0, y: 30 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { staggerChildren: 0.1, duration: 0.6, ease: "easeOut" }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
     };
 
     const renderGameCard = (game) => {
@@ -134,223 +117,294 @@ function Home() {
         const creatorName = game.singlePlayerId?.username || 'Anonymous';
 
         return (
-            <div
+            <motion.div
+                variants={itemVariants}
                 key={game._id}
-                className="bg-gray-800/60 backdrop-blur-sm p-5 rounded-xl border border-gray-700 hover:border-yellow-500/50 transition-all group cursor-pointer"
+                whileHover={{ y: -5, scale: 1.02 }}
+                onClick={() => navigate(`/game/${game._id}`)}
+                className="glass-panel glass-panel-hover p-5 rounded-2xl cursor-pointer relative group overflow-hidden"
             >
-                <div className="flex justify-between items-start mb-3">
-                    <div
-                        className="flex-1"
-                        onClick={() => navigate(`/game/${game._id}`)}
-                    >
-                        <h3 className="text-xl font-bold text-yellow-400 mb-1 group-hover:text-yellow-300 transition-colors">
+                {/* Accent line */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1 pr-4">
+                        <h3 className="text-xl font-bold text-white mb-1 group-hover:text-amber-400 transition-colors duration-300 line-clamp-1">
                             {game.name}
                         </h3>
-                        <p className="text-sm text-gray-400">
-                            by <span className="text-gray-300">{creatorName}</span>
-                        </p>
+                        <div className="flex items-center gap-2 text-sm text-slate-400">
+                            <Shield className="w-3.5 h-3.5" />
+                            <span className="truncate">by {creatorName}</span>
+                        </div>
                     </div>
+
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             handleHeartClick(game._id, isHearted);
                         }}
-                        className={`transition-transform hover:scale-110 p-2 rounded-full hover:bg-white/5 ${isHearted ? 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'text-gray-400 hover:text-red-400'
-                            }`}
+                        className={`transition-all duration-300 p-2.5 rounded-full z-10 
+                            ${isHearted ? 'bg-red-500/20 text-red-500' : 'bg-slate-800/50 text-slate-400 hover:bg-red-500/10 hover:text-red-400'}`}
                         title={isLoggedIn ? (isHearted ? 'Unheart' : 'Heart this game') : 'Login to heart'}
                     >
-                        <Heart className={`w-6 h-6 ${isHearted ? 'fill-red-500' : ''}`} />
+                        <Heart className={`w-5 h-5 ${isHearted ? 'fill-current' : ''}`} />
                     </button>
                 </div>
 
-                <div
-                    className="flex items-center justify-between text-sm"
-                    onClick={() => navigate(`/game/${game._id}`)}
-                >
-                    <div className="flex gap-4">
-                        <span className="flex items-center gap-1 text-red-400 font-semibold">
-                            <Heart className="w-4 h-4 fill-red-400" />
-                            <span>{game.heartCount || 0}</span>
+                <div className="flex items-center justify-between text-sm mt-4 pt-4 border-t border-slate-700/50">
+                    <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1.5 text-rose-400 font-medium bg-rose-500/10 px-2.5 py-1 rounded-full">
+                            <Heart className="w-3.5 h-3.5 fill-current" />
+                            {game.heartCount || 0}
+                        </span>
+
+                        <span className="flex items-center gap-1.5 text-blue-400 font-medium bg-blue-500/10 px-2.5 py-1 rounded-full">
+                            <Users className="w-3.5 h-3.5" />
+                            {game.gameMode === '1v1' ? '1v1' : game.gameMode === 'ai' ? 'vAI' : 'Crowd'}
                         </span>
                     </div>
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${game.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                        game.status === 'completed' ? 'bg-gray-500/20 text-gray-400' :
-                            'bg-yellow-500/20 text-yellow-400'
-                        }`}>
+
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                        ${game.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' :
+                            game.status === 'completed' ? 'bg-slate-500/20 text-slate-400' :
+                                'bg-amber-500/20 text-amber-400'}`}>
                         {game.status}
                     </span>
                 </div>
-            </div>
+            </motion.div>
         );
     };
 
-
     return (
-        <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-12 font-sans px-4">
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-12 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-yellow-500 text-center drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]">
-                1 vs The Crowd
-            </h1>
-            <div className="flex flex-col gap-6 items-center mb-16">
-                {isLoggedIn ? (
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        className="bg-gradient-to-r from-blue-600 to-blue-500 px-8 py-4 rounded-xl font-bold text-xl shadow-lg hover:scale-105 transition-transform"
-                    >
-                        Go to Dashboard
-                    </button>
-                ) : (
-                    <button
-                        onClick={handleLoginRedirect}
-                        className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 rounded-xl font-bold text-xl shadow-lg hover:scale-105 transition-transform"
-                    >
-                        Login to Play
-                    </button>
-                )}
+        <div className="min-h-screen pt-20 pb-12 px-4 relative flex flex-col items-center overflow-x-hidden">
 
-                <div className="flex gap-2 items-center mt-8 bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
-                    <input
-                        type="text"
-                        value={gameIdInput}
-                        onChange={(e) => setGameIdInput(e.target.value)}
-                        placeholder="Enter Game ID"
-                        className="bg-gray-700 text-white px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-yellow-500 placeholder-gray-400"
-                    />
-                    <button
-                        onClick={handleJoinAsCrowd}
-                        className="bg-yellow-500 text-black px-6 py-2 rounded-lg font-bold hover:bg-yellow-400 transition-colors"
-                    >
-                        Join as Crowd
-                    </button>
-                </div>
+            {/* Background decorative blobs */}
+            <div className="absolute top-20 -left-20 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float"></div>
+            <div className="absolute top-40 -right-20 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
 
-                {!isLoggedIn && (
-                    <p className="text-gray-500 mt-4">
-                        Don't have an account?{' '}
-                        <span
-                            onClick={() => navigate('/signup')}
-                            className="text-yellow-500 hover:text-yellow-400 font-semibold cursor-pointer"
-                        >
-                            Sign up
-                        </span>
+            <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
+                className="w-full max-w-7xl flex flex-col items-center z-10"
+            >
+                {/* Hero Section */}
+                <motion.div variants={itemVariants} className="text-center mb-16 max-w-3xl">
+
+
+                    <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-tight">
+                        <span className="text-blue-100">Jack vs The Subreddit</span>
+                        <br />
+                        <span className="text-gradient-primary">Connect 4</span>
+                    </h1>
+
+                    <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed font-light px-4">
+                        Can Jack beat the Subreddit?<br></br> Practice against friends or our AI until the challenge begins.
                     </p>
-                )}
-            </div>
 
-            {/* Dashboard Content: Side-by-Side on Large Screens */}
-            <div className="w-full max-w-7xl flex flex-col lg:flex-row gap-8 lg:gap-12 lg:items-start">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        {isLoggedIn ? (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => navigate('/dashboard')}
+                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all flex items-center justify-center gap-2"
+                            >
+                                Enter Dashboard <CircleChevronRight className="w-5 h-5" />
+                            </motion.button>
+                        ) : (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => navigate('/login')}
+                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all"
+                            >
+                                Login to Play
+                            </motion.button>
+                        )}
 
-                {/* Popular Games Section (Left/Main) */}
-                <div className="w-full lg:flex-[2]">
-                    <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3">
-                        <Heart className="w-8 h-8 text-red-500 fill-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">Most Loved Games</span>
-                    </h2>
-
-                    {isLoading ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-                            {[1, 2, 3, 4].map((n) => (
-                                <div key={n} className="bg-gray-800/40 p-5 rounded-xl border border-gray-700 h-32 animate-pulse">
-                                    <div className="h-6 bg-gray-700 rounded w-3/4 mb-2"></div>
-                                    <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-                                </div>
-                            ))}
+                        <div className="flex gap-2 w-full sm:w-auto relative">
+                            <input
+                                type="text"
+                                value={gameIdInput}
+                                onChange={(e) => setGameIdInput(e.target.value)}
+                                placeholder="Enter Game ID..."
+                                className="w-full sm:w-64 bg-slate-900/50 text-white px-5 py-4 rounded-xl border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none backdrop-blur-md transition-all font-mono"
+                            />
+                            <button
+                                onClick={handleJoinAsCrowd}
+                                className="absolute right-2 top-2 bottom-2 bg-slate-800 hover:bg-slate-700 text-white px-4 rounded-lg font-semibold transition-colors border border-slate-600"
+                            >
+                                Join
+                            </button>
                         </div>
-                    ) : popularGames && popularGames.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-                            {(Array.isArray(popularGames) ? popularGames : []).slice(0, 6).map(renderGameCard)}
-                        </div>
-                    ) : (
-                        <div className="text-center text-gray-400 bg-gray-800/40 p-12 rounded-xl backdrop-blur-sm border border-gray-800">
-                            <Heart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                            <p className="text-lg">No hearted games yet.</p>
-                            <p className="text-sm text-gray-500 mt-2">Be the first to create and love a game!</p>
+                    </div>
+
+                    {!isLoggedIn && (
+                        <div className="mt-6 flex flex-col items-center gap-1">
+                            <p className="text-slate-500">
+                                New here?{' '}
+                                <span onClick={() => navigate('/signup')} className="text-blue-400 hover:text-blue-300 font-medium cursor-pointer transition-colors">
+                                    Create an account
+                                </span>
+                            </p>
+                            <p className="text-slate-500/70 text-xs">
+                                (No email required to play)
+                            </p>
                         </div>
                     )}
-                </div>
+                </motion.div>
 
-                {/* Hall of Fame Section (Right/Side) */}
-                <div className="w-full lg:flex-1">
-                    <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3">
-                        <Trophy className="w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">Hall of Fame</span>
-                    </h2>
+                {/* Split Content Section */}
+                <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 mt-8">
 
-                    {isLoading ? (
-                        <div className="flex flex-col gap-3 w-full">
-                            {[1, 2, 3].map((n) => (
-                                <div key={n} className="bg-gray-800/40 p-4 rounded-xl border border-gray-700 h-20 animate-pulse"></div>
-                            ))}
+                    {/* Left Col: Popular Games */}
+                    <motion.div variants={itemVariants} className="lg:col-span-8 flex flex-col gap-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-rose-500/20 rounded-xl">
+                                <Heart className="w-6 h-6 text-rose-500 fill-rose-500" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-white tracking-tight">Trending Games</h2>
                         </div>
-                    ) : leaderboard.length === 0 ? (
-                        <div className="text-center text-gray-500 bg-gray-800/30 p-8 rounded-xl backdrop-blur-sm border border-gray-800">
-                            <p>No champions yet. Will you be the first?</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-3 w-full">
-                            {leaderboard.map((player, index) => {
-                                // Rank Styles
-                                const isFirst = index === 0;
-                                const isSecond = index === 1;
-                                const isThird = index === 2;
 
-                                const rankColor = isFirst ? 'text-yellow-400' :
-                                    isSecond ? 'text-gray-300' :
-                                        isThird ? 'text-orange-400' : 'text-gray-500';
-
-                                const borderColor = isFirst ? 'border-yellow-500/50 hover:border-yellow-400' :
-                                    isSecond ? 'border-gray-500/50 hover:border-gray-300' :
-                                        isThird ? 'border-orange-500/50 hover:border-orange-400' :
-                                            'border-gray-800 hover:border-gray-600';
-
-                                const bgGradient = isFirst ? 'bg-gradient-to-r from-yellow-900/20 to-gray-800' :
-                                    isSecond ? 'bg-gradient-to-r from-gray-800 to-gray-800' :
-                                        isThird ? 'bg-gradient-to-r from-orange-900/20 to-gray-800' :
-                                            'bg-gray-800/40';
-
-                                const glow = isFirst ? 'shadow-[0_0_15px_rgba(234,179,8,0.2)]' : '';
-
-                                return (
-                                    <div
-                                        key={player._id}
-                                        className={`
-                                        relative flex items-center justify-between p-4 rounded-xl border transition-all duration-300 transform hover:scale-[1.02] hover:bg-gray-700/60
-                                        ${borderColor} ${bgGradient} ${glow} backdrop-blur-md
-                                    `}
-                                    >
-                                        {/* Left: Rank & Name */}
-                                        <div className="flex items-center gap-4 md:gap-6">
-                                            <div className={`
-                                            font-mono text-xl md:text-2xl font-bold w-12 text-center
-                                            ${rankColor}
-                                        `}>
-                                                #{index + 1}
-                                            </div>
-
-                                            <div className="flex flex-col">
-                                                <span className={`
-                                                font-bold text-lg md:text-xl text-white
-                                                ${isFirst ? 'drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : ''}
-                                            `}>
-                                                    {player.username}
-                                                </span>
-                                                {isFirst && <span className="text-xs text-yellow-500 font-bold tracking-wider uppercase">Champion</span>}
-                                            </div>
-                                        </div>
-
-                                        {/* Right: Wins */}
-                                        <div className="flex items-center gap-2">
-                                            <Trophy className={`w-6 h-6 ${isFirst ? 'text-yellow-400 fill-yellow-400' : isSecond ? 'text-gray-300 fill-gray-300' : isThird ? 'text-orange-400 fill-orange-400' : 'text-gray-500'}`} />
-                                            <span className={`font-mono font-bold text-xl md:text-2xl ${rankColor}`}>
-                                                {player.wins}
-                                            </span>
-                                        </div>
+                        {isLoading ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {[1, 2, 3, 4].map((n) => (
+                                    <div key={n} className="glass-panel p-5 rounded-2xl h-36 animate-pulse">
+                                        <div className="h-6 bg-slate-700/50 rounded-md w-3/4 mb-4"></div>
+                                        <div className="h-4 bg-slate-700/50 rounded-md w-1/2"></div>
                                     </div>
-                                );
-                            })}
+                                ))}
+                            </div>
+                        ) : popularGames && popularGames.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {(() => {
+                                    const allGames = Array.isArray(popularGames) ? popularGames : [];
+                                    const active = allGames.filter(g => g.status === 'active');
+                                    const completed = allGames.filter(g => g.status === 'completed');
+
+                                    let picked = [];
+                                    const activeSlice = active.slice(0, 2);
+                                    const completedSlice = completed.slice(0, 2);
+                                    picked = [...activeSlice, ...completedSlice];
+
+                                    // Fill remaining slots if either category has fewer than 2
+                                    if (picked.length < 4) {
+                                        const pickedIds = new Set(picked.map(g => g._id));
+                                        const remaining = allGames.filter(g => !pickedIds.has(g._id));
+                                        picked = [...picked, ...remaining.slice(0, 4 - picked.length)];
+                                    }
+
+                                    return picked.map(renderGameCard);
+                                })()}
+                            </div>
+                        ) : (
+                            <div className="glass-panel p-12 rounded-2xl text-center border-dashed border-2 border-slate-700">
+                                <Heart className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold text-slate-300 mb-2">No Trending Games</h3>
+                                <p className="text-slate-500">Be the first to create and popularize a game!</p>
+                            </div>
+                        )}
+                    </motion.div>
+
+                    {/* Right Col: Hall of Fame */}
+                    <motion.div variants={itemVariants} className="lg:col-span-4 flex flex-col gap-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-amber-500/20 rounded-xl">
+                                <Trophy className="w-6 h-6 text-amber-500 fill-amber-500" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-white tracking-tight">Hall of Fame</h2>
                         </div>
-                    )}
+
+                        {isLoading ? (
+                            <div className="flex flex-col gap-4">
+                                {[1, 2, 3].map((n) => (
+                                    <div key={n} className="glass-panel h-20 rounded-2xl animate-pulse"></div>
+                                ))}
+                            </div>
+                        ) : leaderboard.length === 0 ? (
+                            <div className="glass-panel p-8 rounded-2xl text-center">
+                                <Trophy className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                                <p className="text-slate-400">The throne is empty. Claim it.</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                <AnimatePresence>
+                                    {leaderboard.slice(0, 3).map((player, index) => {
+                                        const isFirst = index === 0;
+                                        const isSecond = index === 1;
+                                        const isThird = index === 2;
+
+                                        let bgClass = "bg-slate-800/40";
+                                        let borderClass = "border-slate-700";
+                                        let textClass = "text-slate-400";
+                                        let glowClass = "";
+
+                                        if (isFirst) {
+                                            bgClass = "bg-amber-500/15";
+                                            borderClass = "border-amber-500/30";
+                                            textClass = "text-amber-400";
+                                            glowClass = "shadow-[0_0_20px_rgba(245,158,11,0.15)]";
+                                        } else if (isSecond) {
+                                            bgClass = "bg-slate-300/10";
+                                            borderClass = "border-slate-400/30";
+                                            textClass = "text-slate-300";
+                                        } else if (isThird) {
+                                            bgClass = "bg-orange-400/10";
+                                            borderClass = "border-orange-900/50";
+                                            textClass = "text-orange-400";
+                                        }
+
+                                        return (
+                                            <motion.div
+                                                initial={{ opacity: 0, x: 20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: index * 0.1 }}
+                                                key={player._id}
+                                                className={`relative flex items-center justify-between p-4 rounded-2xl border backdrop-blur-md ${bgClass} ${borderClass} ${glowClass} hover:bg-slate-800/60 transition-colors`}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`text-2xl font-black font-mono w-8 text-center ${textClass}`}>
+                                                        {index + 1}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className={`font-bold text-lg ${isFirst ? 'text-white' : 'text-slate-200'}`}>
+                                                            {player.username}
+                                                        </h4>
+                                                        {isFirst && <span className="text-xs font-bold text-amber-500 uppercase tracking-wider">Grandmaster</span>}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                                                    <Trophy className={`w-4 h-4 ${isFirst ? 'text-amber-400' : 'text-slate-500'}`} />
+                                                    <span className="font-mono font-bold text-white">{player.wins}</span>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </AnimatePresence>
+                            </div>
+                        )}
+                    </motion.div>
+
                 </div>
-            </div>
+            </motion.div>
+
+            {/* Credits Footer */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8, duration: 1 }}
+                className="w-full max-w-7xl mt-16 mb-6 text-center z-10 flex flex-col gap-2 relative"
+            >
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
+                <p className="text-slate-400 text-sm mt-6 flex items-center justify-center gap-1.5">
+                    Developed with <Heart className="w-4 h-4 text-rose-500 fill-rose-500 animate-pulse" /> by <a href="https://www.linkedin.com/in/osman-bin-nasir/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 font-bold transition-colors">Osman Bin Nasir</a>
+                </p>
+                <p className="text-slate-500 text-xs">
+                    Special thanks to <span className="text-slate-300 font-medium tracking-wide">u/Techie_Jack</span> for the subdomain and <span className="text-slate-300 font-medium tracking-wide">u/DeadSubDoc</span> for the jack.fun integration.
+                </p>
+            </motion.div>
         </div>
     );
 }

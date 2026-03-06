@@ -21,8 +21,8 @@ router.post('/signup', authLimiter, async (req, res) => {
         const { username, email, password } = req.body;
 
         // Validate input
-        if (!username || !email || !password) {
-            return res.status(400).json({ error: 'All fields are required' });
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required' });
         }
 
         // Password policy
@@ -30,22 +30,32 @@ router.post('/signup', authLimiter, async (req, res) => {
             return res.status(400).json({ error: 'Password must be at least 8 characters long' });
         }
 
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ error: 'Email already registered' });
+        // Check if username already exists
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+            return res.status(400).json({ error: 'Username already taken. Please choose another one.' });
+        }
+
+        // Check if email already exists (if provided)
+        if (email) {
+            const existingEmail = await User.findOne({ email });
+            if (existingEmail) {
+                return res.status(400).json({ error: 'Email already registered' });
+            }
         }
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create user
-        const user = new User({
+        // Create user (omit email if empty to avoid sparse index issues)
+        const userData = {
             username,
-            email,
             password: hashedPassword,
             isGuest: false
-        });
+        };
+        if (email) userData.email = email;
+
+        const user = new User(userData);
 
         await user.save();
 
@@ -72,15 +82,17 @@ router.post('/signup', authLimiter, async (req, res) => {
 // Login
 router.post('/login', authLimiter, async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { identifier, password } = req.body;
 
         // Validate input
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required' });
+        if (!identifier || !password) {
+            return res.status(400).json({ error: 'Email/Username and password are required' });
         }
 
-        // Find user
-        const user = await User.findOne({ email });
+        // Find user by either email or username
+        const user = await User.findOne({
+            $or: [{ email: identifier }, { username: identifier }]
+        });
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
