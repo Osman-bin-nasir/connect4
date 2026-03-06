@@ -190,19 +190,16 @@ function Home() {
             >
                 {/* Hero Section */}
                 <motion.div variants={itemVariants} className="text-center mb-16 max-w-3xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-slate-700 text-sm text-slate-300 mb-6 backdrop-blur-md">
-                        <Zap className="w-4 h-4 text-amber-400" />
-                        <span>The ultimate multiplayer experience</span>
-                    </div>
+
 
                     <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-tight">
-                        <span className="text-white">Face off against </span>
+                        <span className="text-blue-100">Jack vs The Subreddit</span>
                         <br />
-                        <span className="text-gradient-primary">The Crowd</span>
+                        <span className="text-gradient-primary">Connect 4</span>
                     </h1>
 
                     <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed font-light px-4">
-                        Will you conquer the collective mind, or be crushed by the hive? Play 1v1, against our AI, or let the internet decide your fate in real-time.
+                        Can Jack beat the Subreddit?<br></br> Practice against friends or our AI until the challenge begins.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -244,12 +241,17 @@ function Home() {
                     </div>
 
                     {!isLoggedIn && (
-                        <p className="mt-6 text-slate-500">
-                            New here?{' '}
-                            <span onClick={() => navigate('/signup')} className="text-blue-400 hover:text-blue-300 font-medium cursor-pointer transition-colors">
-                                Create an account
-                            </span>
-                        </p>
+                        <div className="mt-6 flex flex-col items-center gap-1">
+                            <p className="text-slate-500">
+                                New here?{' '}
+                                <span onClick={() => navigate('/signup')} className="text-blue-400 hover:text-blue-300 font-medium cursor-pointer transition-colors">
+                                    Create an account
+                                </span>
+                            </p>
+                            <p className="text-slate-500/70 text-xs">
+                                (No email required to play)
+                            </p>
+                        </div>
                     )}
                 </motion.div>
 
@@ -386,6 +388,22 @@ function Home() {
                     </motion.div>
 
                 </div>
+            </motion.div>
+
+            {/* Credits Footer */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8, duration: 1 }}
+                className="w-full max-w-7xl mt-16 mb-6 text-center z-10 flex flex-col gap-2 relative"
+            >
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
+                <p className="text-slate-400 text-sm mt-6 flex items-center justify-center gap-1.5">
+                    Developed with <Heart className="w-4 h-4 text-rose-500 fill-rose-500 animate-pulse" /> by <a href="https://www.linkedin.com/in/osman-bin-nasir/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 font-bold transition-colors">Osman Bin Nasir</a>
+                </p>
+                <p className="text-slate-500 text-xs">
+                    Special thanks to <span className="text-slate-300 font-medium tracking-wide">u/Techie_Jack</span> for the subdomain and <span className="text-slate-300 font-medium tracking-wide">u/DeadSubDoc</span> for the jack.fun integration.
+                </p>
             </motion.div>
         </div>
     );
