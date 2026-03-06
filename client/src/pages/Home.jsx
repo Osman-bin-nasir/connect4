@@ -125,7 +125,7 @@ function Home() {
                 className="glass-panel glass-panel-hover p-5 rounded-2xl cursor-pointer relative group overflow-hidden"
             >
                 {/* Accent line */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute top-0 left-0 w-full h-1 bg-white/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 pr-4">
@@ -158,7 +158,7 @@ function Home() {
                             {game.heartCount || 0}
                         </span>
 
-                        <span className="flex items-center gap-1.5 text-blue-400 font-medium bg-blue-500/10 px-2.5 py-1 rounded-full">
+                        <span className="flex items-center gap-1.5 text-slate-300 font-medium bg-slate-500/10 px-2.5 py-1 rounded-full">
                             <Users className="w-3.5 h-3.5" />
                             {game.gameMode === '1v1' ? '1v1' : game.gameMode === 'ai' ? 'vAI' : 'Crowd'}
                         </span>
@@ -179,8 +179,8 @@ function Home() {
         <div className="min-h-screen pt-20 pb-12 px-4 relative flex flex-col items-center overflow-x-hidden">
 
             {/* Background decorative blobs */}
-            <div className="absolute top-20 -left-20 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float"></div>
-            <div className="absolute top-40 -right-20 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute top-20 -left-20 w-72 h-72 bg-slate-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float"></div>
+            <div className="absolute top-40 -right-20 w-72 h-72 bg-slate-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
 
             <motion.div
                 initial="hidden"
@@ -193,7 +193,7 @@ function Home() {
 
 
                     <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-tight">
-                        <span className="text-blue-100">Jack vs The Subreddit</span>
+                        <span className="text-white">Jack vs The Subreddit</span>
                         <br />
                         <span className="text-gradient-primary">Connect 4</span>
                     </h1>
@@ -208,7 +208,7 @@ function Home() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => navigate('/dashboard')}
-                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all flex items-center justify-center gap-2"
+                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-white/10 hover:bg-white/20 text-white border border-white/30 hover:border-white/60 transition-all flex items-center justify-center gap-2"
                             >
                                 Enter Dashboard <CircleChevronRight className="w-5 h-5" />
                             </motion.button>
@@ -217,7 +217,7 @@ function Home() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => navigate('/login')}
-                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all"
+                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-white/10 hover:bg-white/20 text-white border border-white/30 hover:border-white/60 transition-all"
                             >
                                 Login to Play
                             </motion.button>
@@ -229,7 +229,7 @@ function Home() {
                                 value={gameIdInput}
                                 onChange={(e) => setGameIdInput(e.target.value)}
                                 placeholder="Enter Game ID..."
-                                className="w-full sm:w-64 bg-slate-900/50 text-white px-5 py-4 rounded-xl border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none backdrop-blur-md transition-all font-mono"
+                                className="w-full sm:w-64 bg-slate-900/50 text-white px-5 py-4 rounded-xl border border-slate-700 focus:border-white/50 focus:ring-2 focus:ring-white/10 outline-none backdrop-blur-md transition-all font-mono"
                             />
                             <button
                                 onClick={handleJoinAsCrowd}
@@ -244,7 +244,7 @@ function Home() {
                         <div className="mt-6 flex flex-col items-center gap-1">
                             <p className="text-slate-500">
                                 New here?{' '}
-                                <span onClick={() => navigate('/signup')} className="text-blue-400 hover:text-blue-300 font-medium cursor-pointer transition-colors">
+                                <span onClick={() => navigate('/signup')} className="text-white hover:text-slate-300 font-medium cursor-pointer transition-colors">
                                     Create an account
                                 </span>
                             </p>
@@ -399,7 +399,7 @@ function Home() {
             >
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
                 <p className="text-slate-400 text-sm mt-6 flex items-center justify-center gap-1.5">
-                    Developed with <Heart className="w-4 h-4 text-rose-500 fill-rose-500 animate-pulse" /> by <a href="https://www.linkedin.com/in/osman-bin-nasir/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 font-bold transition-colors">Osman Bin Nasir</a>
+                    Developed with <Heart className="w-4 h-4 text-rose-500 fill-rose-500 animate-pulse" /> by <a href="https://www.linkedin.com/in/osman-bin-nasir/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-slate-300 font-bold transition-colors">Osman Bin Nasir</a>
                 </p>
                 <p className="text-slate-500 text-xs">
                     Special thanks to <span className="text-slate-300 font-medium tracking-wide">u/Techie_Jack</span> for the subdomain and <span className="text-slate-300 font-medium tracking-wide">u/DeadSubDoc</span> for the jack.fun integration.

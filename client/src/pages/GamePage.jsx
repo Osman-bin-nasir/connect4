@@ -770,7 +770,7 @@ function GamePage() {
                                 className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 px-6 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center gap-2"
                             >
                                 <Play className="w-5 h-5" />
-                                <span>Replay</span>
+                                <span>Enhance Enhance</span>
                             </button>
                         </div>
                     )

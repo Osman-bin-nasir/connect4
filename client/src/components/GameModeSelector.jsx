@@ -13,7 +13,7 @@ function GameModeSelector({ selectedMode, onModeChange }) {
             title: '1 vs The Crowd',
             icon: Users,
             description: 'Face thousands! The crowd votes on each move.',
-            color: 'yellow'
+            color: 'blue'
         },
         {
             id: '1v1',
@@ -40,10 +40,10 @@ function GameModeSelector({ selectedMode, onModeChange }) {
                 icon: 'text-yellow-500'
             },
             blue: {
-                selected: 'bg-blue-500/15 border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.2)]',
-                hover: 'hover:bg-blue-500/10 hover:border-blue-500/40',
-                text: 'text-blue-400',
-                icon: 'text-blue-500'
+                selected: 'bg-white/10 border-white/40 shadow-[0_0_20px_rgba(255,255,255,0.1)]',
+                hover: 'hover:bg-white/5 hover:border-white/30',
+                text: 'text-white',
+                icon: 'text-white'
             }
         };
 
