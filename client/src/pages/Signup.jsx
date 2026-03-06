@@ -19,8 +19,8 @@ function Signup() {
 
         if (isLoading) return;
 
-        if (!username || !email || !password || !confirmPassword) {
-            toast.error('Please fill in all fields', { style: { background: '#334155', color: '#fff' } });
+        if (!username || !password || !confirmPassword) {
+            toast.error('Please fill in all required fields', { style: { background: '#334155', color: '#fff' } });
             return;
         }
 
@@ -36,11 +36,13 @@ function Signup() {
 
         setIsLoading(true);
         try {
-            const res = await axios.post(`${API_URL}/api/auth/signup`, {
+            const payload = {
                 username,
-                email,
                 password
-            });
+            };
+            if (email) payload.email = email;
+
+            const res = await axios.post(`${API_URL}/api/auth/signup`, payload);
 
             // Auto login
             const { user, token } = res.data;
@@ -90,7 +92,7 @@ function Signup() {
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Username</label>
+                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Username <span className="text-red-500">*</span></label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                     <User className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
@@ -106,7 +108,7 @@ function Signup() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Email</label>
+                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Email <span className="text-slate-500 normal-case tracking-normal text-[10px] ml-1">(Optional)</span></label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                     <Mail className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
@@ -122,7 +124,7 @@ function Signup() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Password</label>
+                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Password <span className="text-red-500">*</span></label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                     <Lock className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
@@ -138,7 +140,7 @@ function Signup() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Confirm Password</label>
+                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Confirm Password <span className="text-red-500">*</span></label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                     <Lock className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />

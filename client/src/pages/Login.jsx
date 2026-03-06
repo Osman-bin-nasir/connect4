@@ -3,11 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, Home } from 'lucide-react';
+import { User, Lock, ArrowRight, Home } from 'lucide-react';
 import API_URL from '../config';
 
 function Login() {
-    const [email, setEmail] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
@@ -15,7 +15,7 @@ function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!email || !password) {
+        if (!identifier || !password) {
             toast.error('Please fill in all fields', { style: { background: '#334155', color: '#fff' } });
             return;
         }
@@ -23,7 +23,7 @@ function Login() {
         setIsLoading(true);
         try {
             const res = await axios.post(`${API_URL}/api/auth/login`, {
-                email,
+                identifier,
                 password
             });
 
@@ -75,17 +75,17 @@ function Login() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-bold text-slate-300 ml-1">Email</label>
+                            <label className="block text-sm font-bold text-slate-300 ml-1">Email or Username</label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                                    <User className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                                 </div>
                                 <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    type="text"
+                                    value={identifier}
+                                    onChange={(e) => setIdentifier(e.target.value)}
                                     className="w-full bg-slate-900/50 text-white pl-11 pr-4 py-3.5 rounded-xl border border-slate-700/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-600"
-                                    placeholder="Enter your email"
+                                    placeholder="Enter your email or username"
                                 />
                             </div>
                         </div>
