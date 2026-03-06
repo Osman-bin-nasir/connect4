@@ -67,8 +67,8 @@ function Signup() {
         <div className="min-h-screen pt-16 pb-12 px-4 relative flex items-center justify-center overflow-hidden">
 
             {/* Background elements */}
-            <div className="absolute top-1/4 -right-20 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float"></div>
-            <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-emerald-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute top-1/4 -right-20 w-96 h-96 bg-slate-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float"></div>
+            <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-slate-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
 
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -83,7 +83,7 @@ function Signup() {
                 </Link>
 
                 <div className="glass-panel p-8 md:p-10 rounded-3xl relative overflow-hidden backdrop-blur-xl border border-slate-700/50 shadow-2xl">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+                    <div className="absolute top-0 left-0 w-full h-1 bg-white/40"></div>
 
                     <div className="mb-8 text-center">
                         <h1 className="text-3xl font-black mb-2 text-white">
@@ -97,13 +97,13 @@ function Signup() {
                             <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Username <span className="text-red-500">*</span></label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <User className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                                    <User className="h-4 w-4 text-slate-500 group-focus-within:text-white transition-colors" />
                                 </div>
                                 <input
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
-                                    className="w-full bg-slate-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-slate-700/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-600 text-sm"
+                                    className="w-full bg-slate-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-slate-700/50 focus:border-white/50 focus:ring-2 focus:ring-white/10 outline-none transition-all placeholder:text-slate-600 text-sm"
                                     placeholder="Choose a username"
                                 />
                             </div>
@@ -113,13 +113,13 @@ function Signup() {
                             <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Email <span className="text-slate-500 normal-case tracking-normal text-[10px] ml-1">(Optional)</span></label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Mail className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                                    <Mail className="h-4 w-4 text-slate-500 group-focus-within:text-white transition-colors" />
                                 </div>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-slate-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-slate-700/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-600 text-sm"
+                                    className="w-full bg-slate-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-slate-700/50 focus:border-white/50 focus:ring-2 focus:ring-white/10 outline-none transition-all placeholder:text-slate-600 text-sm"
                                     placeholder="your@email.com"
                                 />
                             </div>
@@ -130,13 +130,13 @@ function Signup() {
                             <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Password <span className="text-red-500">*</span></label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Lock className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                                    <Lock className="h-4 w-4 text-slate-500 group-focus-within:text-white transition-colors" />
                                 </div>
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-slate-900/50 text-white pl-10 pr-10 py-3 rounded-xl border border-slate-700/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-600 text-sm"
+                                    className="w-full bg-slate-900/50 text-white pl-10 pr-10 py-3 rounded-xl border border-slate-700/50 focus:border-white/50 focus:ring-2 focus:ring-white/10 outline-none transition-all placeholder:text-slate-600 text-sm"
                                     placeholder="••••••••"
                                 />
                                 <button
@@ -154,13 +154,13 @@ function Signup() {
                             <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Confirm Password <span className="text-red-500">*</span></label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Lock className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                                    <Lock className="h-4 w-4 text-slate-500 group-focus-within:text-white transition-colors" />
                                 </div>
                                 <input
                                     type={showConfirmPassword ? "text" : "password"}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full bg-slate-900/50 text-white pl-10 pr-10 py-3 rounded-xl border border-slate-700/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-600 text-sm"
+                                    className="w-full bg-slate-900/50 text-white pl-10 pr-10 py-3 rounded-xl border border-slate-700/50 focus:border-white/50 focus:ring-2 focus:ring-white/10 outline-none transition-all placeholder:text-slate-600 text-sm"
                                     placeholder="••••••••"
                                 />
                                 <button
@@ -179,7 +179,7 @@ function Signup() {
                             whileTap={{ scale: 0.98 }}
                             type="submit"
                             disabled={isLoading}
-                            className={`w-full mt-6 bg-emerald-600 hover:bg-emerald-500 px-6 py-3.5 rounded-xl font-bold text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`w-full mt-6 bg-white/10 hover:bg-white/20 border border-white/30 hover:border-white/60 px-6 py-3.5 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
                             {isLoading ? 'Creating Account...' : (
                                 <>Sign Up <CheckCircle2 className="w-5 h-5" /></>
@@ -190,7 +190,7 @@ function Signup() {
                     <div className="mt-8 pt-6 border-t border-slate-700/50 text-center">
                         <p className="text-slate-400 text-sm">
                             Already have an account?{' '}
-                            <Link to="/login" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
+                            <Link to="/login" className="text-white hover:text-slate-300 font-bold transition-colors">
                                 Log in
                             </Link>
                         </p>
