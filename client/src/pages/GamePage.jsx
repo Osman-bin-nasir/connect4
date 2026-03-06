@@ -650,72 +650,68 @@ function GamePage() {
 
                 {/* Game Status Board */}
                 <div className="mb-8 w-full">
-                    <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg text-center max-w-xl mx-auto flex flex-col gap-4">
-                        <h2 className="text-2xl font-bold" style={{
-                            color: game.status === 'completed'
-                                ? (game.winner === 'player' ? '#f43f5e' : game.winner === 'player2' || game.winner === 'crowd' ? '#eab308' : '#9ca3af')
-                                : (game.currentTurn === 'player' ? '#f43f5e' : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? '#eab308' : '#818cf8')
-                        }}>
-                            {game.status === 'completed' ? (
-                                <span className="flex items-center justify-center gap-3">
-                                    Winner: {game.winner === 'player' ? player1Name : game.winner === 'player2' || game.winner === 'crowd' ? player2Name : game.winner === 'ai' ? 'AI' : 'Draw'}
-                                </span>
-                            ) : (
-                                <span className="flex items-center justify-center gap-2">
-                                    Turn: {game.currentTurn === 'player' ? player1Name : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? player2Name : 'AI'}
-                                </span>
-                            )}
-                        </h2>
+                    <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-lg text-center max-w-xl mx-auto flex flex-col min-h-[200px] overflow-hidden">
+                        {/* Status Message Section - Heading stays centered relative to its own flex-1 area */}
+                        <div className="flex-1 flex flex-col items-center justify-center p-6">
+                            <h2 className="text-2xl font-bold transition-all duration-300" style={{
+                                color: game.status === 'completed'
+                                    ? (game.winner === 'player' ? '#f43f5e' : game.winner === 'player2' || game.winner === 'crowd' ? '#eab308' : '#9ca3af')
+                                    : (game.currentTurn === 'player' ? '#f43f5e' : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? '#eab308' : '#818cf8')
+                            }}>
+                                {game.status === 'completed' ? (
+                                    <>Winner: {game.winner === 'player' ? player1Name : game.winner === 'player2' || game.winner === 'crowd' ? player2Name : game.winner === 'ai' ? 'AI' : 'Draw'}</>
+                                ) : (
+                                    <>{game.currentTurn === 'player' ? player1Name : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? player2Name : 'AI'}'s Turn</>
+                                )}
+                            </h2>
+                        </div>
 
-                        {/* Waiting Indicator */}
-                        {game.status !== 'completed' && (
-                            <div className="flex justify-center items-center h-6 mb-2">
-                                <span className={`text-sm font-bold uppercase px-4 py-1 rounded-full border ${isMyTurn ? 'bg-blue-900/40 text-blue-400 border-blue-500' : 'bg-gray-700 text-gray-400 border-gray-600'}`}>
-                                    {isMyTurn ? "Your Turn" : "Waiting"}
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Crowd Timer & Stats */}
-                        {gameMode === 'crowd' && timer !== null && game.currentTurn === 'crowd' && game.status !== 'completed' && (
-                            <div className="flex flex-col items-center gap-4 pt-4 border-t border-gray-700 mt-2">
-                                <div className="flex justify-center gap-4 w-full">
-                                    <div className="bg-gray-900 p-3 rounded-xl border border-gray-700 flex-1">
-                                        <div className="text-xs font-bold text-gray-500 uppercase mb-1 flex items-center justify-center gap-1.5"><Users className="w-3.5 h-3.5" /> Participants</div>
-                                        <div className="text-2xl font-bold text-yellow-500">{Object.values(votes).reduce((a, b) => a + b, 0)}</div>
-                                    </div>
-                                    <div className="bg-gray-900 p-3 rounded-xl border border-gray-700 flex-1">
-                                        <div className="text-xs font-bold text-gray-500 uppercase mb-1">Time Remaining</div>
-                                        <div className={`text-2xl font-bold ${timer === 'infinite' ? 'text-blue-400' : timer <= 5 ? 'text-red-500' : 'text-green-500'}`}>
-                                            {timer === 'infinite' ? '∞' : `${timer}s`}
+                        {/* Crowd stats - Reserved space in flow to prevent layout shift */}
+                        {gameMode === 'crowd' && game.status !== 'completed' && (
+                            <div className={`px-6 pb-6 mt-[-10px] transition-all duration-300 ${game.currentTurn === 'crowd' && timer !== null ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+                                <div className="flex flex-col items-center gap-4 pt-4 border-t border-gray-700/50">
+                                    <div className="flex justify-center gap-4 w-full">
+                                        <div className="bg-gray-900/50 p-3 rounded-xl border border-gray-700/50 flex-1">
+                                            <div className="text-[10px] font-bold text-gray-500 uppercase mb-1 flex items-center justify-center gap-1.5 leading-none">
+                                                <Users className="w-3 h-3" /> Participants
+                                            </div>
+                                            <div className="text-2xl font-bold text-yellow-500">
+                                                {Object.values(votes).reduce((a, b) => a + b, 0)}
+                                            </div>
+                                        </div>
+                                        <div className="bg-gray-900/50 p-3 rounded-xl border border-gray-700/50 flex-1">
+                                            <div className="text-[10px] font-bold text-gray-500 uppercase mb-1 leading-none">
+                                                Time Left
+                                            </div>
+                                            <div className={`text-2xl font-bold ${timer === 'infinite' ? 'text-blue-400' : timer <= 5 ? 'text-red-500' : 'text-green-500'}`}>
+                                                {timer === 'infinite' ? '∞' : `${timer}s`}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {timer === 'infinite' && role === 'player' && (
-                                    <button
-                                        onClick={handleForceMove}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition-colors flex items-center gap-2"
-                                    >
-                                        Force Crowd Move <Play className="w-4 h-4" />
-                                    </button>
-                                )}
+                                    {timer === 'infinite' && role === 'player' && (
+                                        <button
+                                            onClick={handleForceMove}
+                                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            Force Crowd Move <Play className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         )}
 
-                        {/* Rematch Button */}
+                        {/* Rematch Button - Stable Position */}
                         {game.status === 'completed' && gameMode === '1v1' && (role === 'player' || role === 'player2') && (
-                            <div className="mt-4 pt-4 border-t border-gray-700 flex justify-center">
+                            <div className="mt-4 pt-4 border-t border-gray-700 flex justify-center w-full">
                                 {rematchRequests.includes(userId) ? (
-                                    <span className="text-yellow-500 font-bold bg-yellow-900/30 px-4 py-2 rounded border border-yellow-500/50 flex items-center gap-2">
-                                        Awaiting opponent...
-                                    </span>
+                                    <span className="text-yellow-500 font-bold text-sm">Awaiting opponent...</span>
                                 ) : (
                                     <button
                                         onClick={handleRematch}
-                                        className="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center gap-2"
+                                        className="bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2"
                                     >
-                                        <Play className="w-5 h-5 fill-current" />
+                                        <Play className="w-4 h-4 fill-current" />
                                         {rematchRequests.length > 0 ? "Opponent wants Rematch!" : "Play Again"}
                                     </button>
                                 )}
@@ -743,75 +739,81 @@ function GamePage() {
                 </div>
 
                 {/* Floating Action Buttons */}
-                {hasHistory && !isReplaying && (
-                    <div className="fixed bottom-6 right-6 z-50">
-                        <button
-                            onClick={startReplay}
-                            className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 px-6 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center gap-2"
-                        >
-                            <Play className="w-5 h-5" />
-                            <span>Replay</span>
-                        </button>
-                    </div>
-                )}
+                {
+                    hasHistory && !isReplaying && (
+                        <div className="fixed bottom-6 right-6 z-50">
+                            <button
+                                onClick={startReplay}
+                                className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 px-6 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center gap-2"
+                            >
+                                <Play className="w-5 h-5" />
+                                <span>Replay</span>
+                            </button>
+                        </div>
+                    )
+                }
 
-                {isReplaying && (
-                    <div className="fixed bottom-6 right-6 z-50">
-                        <button
-                            onClick={exitReplay}
-                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center gap-2"
-                        >
-                            <XCircle className="w-5 h-5" /> Exit Replay
-                        </button>
-                    </div>
-                )}
+                {
+                    isReplaying && (
+                        <div className="fixed bottom-6 right-6 z-50">
+                            <button
+                                onClick={exitReplay}
+                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center gap-2"
+                            >
+                                <XCircle className="w-5 h-5" /> Exit Replay
+                            </button>
+                        </div>
+                    )
+                }
 
                 {/* Invite Modal */}
-                {showInviteModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
-                        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-8 max-w-sm w-full shadow-2xl relative">
-                            <button
-                                onClick={() => setShowInviteModal(false)}
-                                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-
-                            <div className="text-center mb-6">
-                                <h3 className="text-2xl font-bold text-white mb-2">
-                                    Invite Players
-                                </h3>
-                                <p className="text-gray-400 text-sm">
-                                    Scan this QR code or copy the link to join the game.
-                                </p>
-                            </div>
-
-                            <div className="bg-white p-4 rounded-xl mx-auto mb-6 w-fit">
-                                <QRCode
-                                    value={window.location.href}
-                                    size={180}
-                                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                                    viewBox={`0 0 256 256`}
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-3">
-                                <div className="bg-gray-900 p-3 rounded-xl border border-gray-700 text-xs text-gray-400 font-mono truncate text-center select-all">
-                                    {window.location.href}
-                                </div>
+                {
+                    showInviteModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+                            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-8 max-w-sm w-full shadow-2xl relative">
                                 <button
-                                    onClick={copyToClipboard}
-                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    onClick={() => setShowInviteModal(false)}
+                                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2"
                                 >
-                                    <Copy className="w-5 h-5" />
-                                    Copy Link
+                                    <X className="w-5 h-5" />
                                 </button>
+
+                                <div className="text-center mb-6">
+                                    <h3 className="text-2xl font-bold text-white mb-2">
+                                        Invite Players
+                                    </h3>
+                                    <p className="text-gray-400 text-sm">
+                                        Scan this QR code or copy the link to join the game.
+                                    </p>
+                                </div>
+
+                                <div className="bg-white p-4 rounded-xl mx-auto mb-6 w-fit">
+                                    <QRCode
+                                        value={window.location.href}
+                                        size={180}
+                                        style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                        viewBox={`0 0 256 256`}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-3">
+                                    <div className="bg-gray-900 p-3 rounded-xl border border-gray-700 text-xs text-gray-400 font-mono truncate text-center select-all">
+                                        {window.location.href}
+                                    </div>
+                                    <button
+                                        onClick={copyToClipboard}
+                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Copy className="w-5 h-5" />
+                                        Copy Link
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
-        </div>
+                    )
+                }
+            </div >
+        </div >
     );
 }
 

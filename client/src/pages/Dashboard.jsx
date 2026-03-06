@@ -193,7 +193,7 @@ function Dashboard() {
                 >
                     <div>
                         <h1 className="text-4xl md:text-5xl font-black text-blue-400 mb-2">
-                            Commander's Deck
+                            Dashboard
                         </h1>
                         <p className="text-slate-400 text-lg">Welcome back, <span className="text-white font-bold">{username}</span></p>
                     </div>
@@ -229,7 +229,7 @@ function Dashboard() {
                                     <div className="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform">
                                         <Plus className="w-6 h-6 text-blue-400" />
                                     </div>
-                                    <span className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors">Forge New Arena</span>
+                                    <span className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors">Create New Game</span>
                                 </div>
                             </button>
                         </motion.div>
@@ -282,49 +282,50 @@ function Dashboard() {
                                         />
                                     </div>
 
-                                    {/* Crowd Name */}
-                                    {gameMode === 'crowd' && (
-                                        <div className="space-y-2">
-                                            <label className="block text-sm font-bold text-slate-300 ml-1">Crowd Name</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    value={newCrowdName}
-                                                    onChange={(e) => setNewCrowdName(e.target.value)}
-                                                    className="w-full bg-slate-900/60 text-white pl-12 pr-5 py-3.5 rounded-xl border border-slate-700/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-600"
-                                                    placeholder="The Horde"
-                                                />
-                                                <Users className="w-5 h-5 text-slate-500 absolute left-4 top-4" />
+                                    {/* Mode-specific options - fixed height to prevent layout shift */}
+                                    <div className="min-h-[120px]">
+                                        {gameMode === 'crowd' && (
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-bold text-slate-300 ml-1">Crowd Name</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        value={newCrowdName}
+                                                        onChange={(e) => setNewCrowdName(e.target.value)}
+                                                        className="w-full bg-slate-900/60 text-white pl-12 pr-5 py-3.5 rounded-xl border border-slate-700/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-600"
+                                                        placeholder="The Horde"
+                                                    />
+                                                    <Users className="w-5 h-5 text-slate-500 absolute left-4 top-4" />
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {/* AI Difficulty */}
-                                    {gameMode === 'ai' && (
-                                        <div className="space-y-2">
-                                            <label className="block text-sm font-bold text-slate-300 ml-1 flex justify-between">
-                                                <span>AI Difficulty</span>
-                                                <span className="text-blue-400">
-                                                    {['Novice', 'Veteran', 'Grandmaster'][Math.floor((aiDifficulty - 1) / 2)]}
-                                                </span>
-                                            </label>
-                                            <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 h-[54px] flex items-center">
-                                                <input
-                                                    type="range"
-                                                    min="1"
-                                                    max="6"
-                                                    value={aiDifficulty}
-                                                    onChange={(e) => setAiDifficulty(Number(e.target.value))}
-                                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                                                />
+                                        {gameMode === 'ai' && (
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-bold text-slate-300 ml-1 flex justify-between">
+                                                    <span>AI Difficulty</span>
+                                                    <span className="text-blue-400">
+                                                        {['Novice', 'Veteran', 'Grandmaster'][Math.floor((aiDifficulty - 1) / 2)]}
+                                                    </span>
+                                                </label>
+                                                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 h-[54px] flex items-center">
+                                                    <input
+                                                        type="range"
+                                                        min="1"
+                                                        max="6"
+                                                        value={aiDifficulty}
+                                                        onChange={(e) => setAiDifficulty(Number(e.target.value))}
+                                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                                    />
+                                                </div>
+                                                <div className="flex justify-between text-xs text-slate-500 px-1 mt-1">
+                                                    <span>Easy</span>
+                                                    <span>Medium</span>
+                                                    <span>Hard</span>
+                                                </div>
                                             </div>
-                                            <div className="flex justify-between text-xs text-slate-500 px-1 mt-1">
-                                                <span>Easy</span>
-                                                <span>Medium</span>
-                                                <span>Hard</span>
-                                            </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -409,7 +410,7 @@ function Dashboard() {
                 >
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-1.5 h-8 bg-blue-500 rounded-full"></div>
-                        <h2 className="text-3xl font-bold text-white">Active Campaigns</h2>
+                        <h2 className="text-3xl font-bold text-white">Active Games</h2>
                         <span className="ml-2 bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-sm font-bold border border-slate-700">{games.length}</span>
                     </div>
 
