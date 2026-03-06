@@ -179,7 +179,7 @@ function Dashboard() {
         <div className="min-h-screen pt-20 pb-12 px-4 relative overflow-x-hidden text-slate-200">
             {/* Background elements */}
             <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10">
-                <div className="absolute top-0 right-1/4 w-96 h-96 bg-indigo-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-10 animate-float"></div>
+                <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-10 animate-float"></div>
                 <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-rose-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-10 animate-float" style={{ animationDelay: '2s' }}></div>
             </div>
 
@@ -192,7 +192,7 @@ function Dashboard() {
                     className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12"
                 >
                     <div>
-                        <h1 className="text-4xl md:text-5xl font-black text-indigo-400 mb-2">
+                        <h1 className="text-4xl md:text-5xl font-black text-blue-400 mb-2">
                             Commander's Deck
                         </h1>
                         <p className="text-slate-400 text-lg">Welcome back, <span className="text-white font-bold">{username}</span></p>
@@ -224,12 +224,12 @@ function Dashboard() {
                                 onClick={() => setIsCreating(true)}
                                 className="w-full relative group overflow-hidden rounded-2xl p-1"
                             >
-                                <div className="absolute inset-0 bg-indigo-500 opacity-70 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+                                <div className="absolute inset-0 bg-blue-500 opacity-70 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
                                 <div className="relative bg-slate-900 border border-white/10 px-8 py-6 rounded-xl flex items-center justify-center gap-3 backdrop-blur-xl group-hover:bg-slate-900/80 transition-colors">
-                                    <div className="p-2 bg-indigo-500/20 rounded-lg group-hover:scale-110 transition-transform">
-                                        <Plus className="w-6 h-6 text-indigo-400" />
+                                    <div className="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform">
+                                        <Plus className="w-6 h-6 text-blue-400" />
                                     </div>
-                                    <span className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">Forge New Arena</span>
+                                    <span className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors">Forge New Arena</span>
                                 </div>
                             </button>
                         </motion.div>
@@ -247,11 +247,11 @@ function Dashboard() {
                         >
                             <div className="glass-panel p-6 md:p-8 rounded-3xl relative border-t border-l border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
                                 {/* Decorative corner */}
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-bl-full pointer-events-none"></div>
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-bl-full pointer-events-none"></div>
 
                                 <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-700/50">
                                     <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                                        <div className="w-2 h-8 bg-indigo-500 rounded-full"></div>
+                                        <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
                                         Configure New Game
                                     </h2>
                                     <button
@@ -277,7 +277,7 @@ function Dashboard() {
                                             type="text"
                                             value={newGameName}
                                             onChange={(e) => setNewGameName(e.target.value)}
-                                            className="w-full bg-slate-900/60 text-white px-5 py-3.5 rounded-xl border border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-600"
+                                            className="w-full bg-slate-900/60 text-white px-5 py-3.5 rounded-xl border border-slate-700/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-600"
                                             placeholder="e.g. The Final Stand"
                                         />
                                     </div>
@@ -291,7 +291,7 @@ function Dashboard() {
                                                     type="text"
                                                     value={newCrowdName}
                                                     onChange={(e) => setNewCrowdName(e.target.value)}
-                                                    className="w-full bg-slate-900/60 text-white pl-12 pr-5 py-3.5 rounded-xl border border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-600"
+                                                    className="w-full bg-slate-900/60 text-white pl-12 pr-5 py-3.5 rounded-xl border border-slate-700/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-600"
                                                     placeholder="The Horde"
                                                 />
                                                 <Users className="w-5 h-5 text-slate-500 absolute left-4 top-4" />
@@ -304,7 +304,7 @@ function Dashboard() {
                                         <div className="space-y-2">
                                             <label className="block text-sm font-bold text-slate-300 ml-1 flex justify-between">
                                                 <span>AI Difficulty</span>
-                                                <span className="text-indigo-400">
+                                                <span className="text-blue-400">
                                                     {['Novice', 'Veteran', 'Grandmaster'][Math.floor((aiDifficulty - 1) / 2)]}
                                                 </span>
                                             </label>
@@ -315,7 +315,7 @@ function Dashboard() {
                                                     max="6"
                                                     value={aiDifficulty}
                                                     onChange={(e) => setAiDifficulty(Number(e.target.value))}
-                                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                                 />
                                             </div>
                                             <div className="flex justify-between text-xs text-slate-500 px-1 mt-1">
@@ -391,7 +391,7 @@ function Dashboard() {
                                     </button>
                                     <button
                                         onClick={handleCreateGame}
-                                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] hover:-translate-y-0.5 transition-all flex items-center gap-2"
+                                        className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] hover:-translate-y-0.5 transition-all flex items-center gap-2"
                                     >
                                         <Plus className="w-5 h-5" /> Deploy Game
                                     </button>
@@ -408,7 +408,7 @@ function Dashboard() {
                     transition={{ delay: 0.2 }}
                 >
                     <div className="flex items-center gap-3 mb-8">
-                        <div className="w-1.5 h-8 bg-purple-500 rounded-full"></div>
+                        <div className="w-1.5 h-8 bg-blue-500 rounded-full"></div>
                         <h2 className="text-3xl font-bold text-white">Active Campaigns</h2>
                         <span className="ml-2 bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-sm font-bold border border-slate-700">{games.length}</span>
                     </div>
@@ -443,7 +443,7 @@ function Dashboard() {
                             <p className="text-slate-400 text-lg mb-8 max-w-md">Your command center is empty. Forge a new arena to begin your conquest.</p>
                             <button
                                 onClick={() => setIsCreating(true)}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/20 hover:-translate-y-1 transition-transform"
+                                className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:-translate-y-1 transition-transform"
                             >
                                 Get Started
                             </button>
@@ -461,7 +461,7 @@ function Dashboard() {
                                         variants={itemVariants}
                                         layout
                                         key={game._id}
-                                        className="glass-panel p-6 rounded-2xl relative group overflow-hidden border border-slate-700/50 hover:border-indigo-500/50 transition-colors flex flex-col h-full"
+                                        className="glass-panel p-6 rounded-2xl relative group overflow-hidden border border-slate-700/50 hover:border-blue-500/50 transition-colors flex flex-col h-full"
                                     >
                                         {/* Status Glow */}
                                         <div className={`absolute top-0 right-0 w-32 h-32 blur-[64px] rounded-full -z-10 opacity-20 transition-opacity duration-500 group-hover:opacity-40
@@ -474,7 +474,7 @@ function Dashboard() {
                                                     type="text"
                                                     value={editingName}
                                                     onChange={(e) => setEditingName(e.target.value)}
-                                                    className="w-full bg-slate-900 border border-indigo-500 text-white px-4 py-2.5 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/30 mb-3 font-bold text-lg"
+                                                    className="w-full bg-slate-900 border border-blue-500 text-white px-4 py-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 mb-3 font-bold text-lg"
                                                     autoFocus
                                                     onKeyDown={(e) => e.key === 'Enter' && handleRename(game._id)}
                                                 />
@@ -496,13 +496,13 @@ function Dashboard() {
                                         ) : (
                                             <div className="flex flex-col h-full z-10">
                                                 <div className="flex items-start justify-between mb-4 gap-3">
-                                                    <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-2 leading-tight flex-1">
+                                                    <h3 className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2 leading-tight flex-1">
                                                         {game.name}
                                                     </h3>
                                                     <div className="flex flex-col gap-2 items-end shrink-0">
                                                         {/* Game Mode Badge */}
                                                         <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${game.gameMode === 'ai'
-                                                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                                                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                                             : game.gameMode === '1v1'
                                                                 ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                                                 : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
@@ -563,7 +563,7 @@ function Dashboard() {
                                                 <div className="flex gap-2 relative mt-auto">
                                                     <button
                                                         onClick={() => navigate(`/game/${game._id}`)}
-                                                        className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 group/btn flex justify-center items-center gap-2"
+                                                        className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 group/btn flex justify-center items-center gap-2"
                                                     >
                                                         <span>{game.status === 'completed' ? 'View Game' : 'Resume'}</span>
                                                         <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />

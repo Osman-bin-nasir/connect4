@@ -63,7 +63,7 @@ function Signup() {
         <div className="min-h-screen pt-16 pb-12 px-4 relative flex items-center justify-center overflow-hidden">
 
             {/* Background elements */}
-            <div className="absolute top-1/4 -right-20 w-96 h-96 bg-indigo-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float"></div>
+            <div className="absolute top-1/4 -right-20 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float"></div>
             <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-emerald-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
 
             <motion.div

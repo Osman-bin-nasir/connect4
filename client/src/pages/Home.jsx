@@ -158,7 +158,7 @@ function Home() {
                             {game.heartCount || 0}
                         </span>
 
-                        <span className="flex items-center gap-1.5 text-indigo-400 font-medium bg-indigo-500/10 px-2.5 py-1 rounded-full">
+                        <span className="flex items-center gap-1.5 text-blue-400 font-medium bg-blue-500/10 px-2.5 py-1 rounded-full">
                             <Users className="w-3.5 h-3.5" />
                             {game.gameMode === '1v1' ? '1v1' : game.gameMode === 'ai' ? 'vAI' : 'Crowd'}
                         </span>
@@ -179,7 +179,7 @@ function Home() {
         <div className="min-h-screen pt-20 pb-12 px-4 relative flex flex-col items-center overflow-x-hidden">
 
             {/* Background decorative blobs */}
-            <div className="absolute top-20 -left-20 w-72 h-72 bg-purple-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float"></div>
+            <div className="absolute top-20 -left-20 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float"></div>
             <div className="absolute top-40 -right-20 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
 
             <motion.div
@@ -211,7 +211,7 @@ function Home() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => navigate('/dashboard')}
-                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_30px_rgba(79,70,229,0.4)] transition-all flex items-center justify-center gap-2"
+                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all flex items-center justify-center gap-2"
                             >
                                 Enter Dashboard <CircleChevronRight className="w-5 h-5" />
                             </motion.button>
@@ -220,7 +220,7 @@ function Home() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => navigate('/login')}
-                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_30px_rgba(79,70,229,0.4)] transition-all"
+                                className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all"
                             >
                                 Login to Play
                             </motion.button>
@@ -232,7 +232,7 @@ function Home() {
                                 value={gameIdInput}
                                 onChange={(e) => setGameIdInput(e.target.value)}
                                 placeholder="Enter Game ID..."
-                                className="w-full sm:w-64 bg-slate-900/50 text-white px-5 py-4 rounded-xl border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none backdrop-blur-md transition-all font-mono"
+                                className="w-full sm:w-64 bg-slate-900/50 text-white px-5 py-4 rounded-xl border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none backdrop-blur-md transition-all font-mono"
                             />
                             <button
                                 onClick={handleJoinAsCrowd}
@@ -246,7 +246,7 @@ function Home() {
                     {!isLoggedIn && (
                         <p className="mt-6 text-slate-500">
                             New here?{' '}
-                            <span onClick={() => navigate('/signup')} className="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer transition-colors">
+                            <span onClick={() => navigate('/signup')} className="text-blue-400 hover:text-blue-300 font-medium cursor-pointer transition-colors">
                                 Create an account
                             </span>
                         </p>
