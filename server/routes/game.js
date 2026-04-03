@@ -5,6 +5,8 @@ const User = require('../models/User');
 const Heart = require('../models/Heart');
 const authenticateToken = require('../middleware/auth');
 
+const OPEN_1V1_LOBBY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 // Create a new game
 router.post('/', authenticateToken, async (req, res) => {
     try {
@@ -130,6 +132,7 @@ router.get('/lobbies/1v1/open', async (req, res) => {
             gameMode: '1v1',
             status: 'waiting',
             isPublic: true,
+            createdAt: { $gte: new Date(Date.now() - OPEN_1V1_LOBBY_MAX_AGE_MS) },
             $or: [
                 { player2Id: { $exists: false } },
                 { player2Id: null }
@@ -277,6 +280,7 @@ router.post('/:id/join', authenticateToken, async (req, res) => {
                     $set: {
                         player2Id: userId,
                         status: 'active',
+                        currentTurn: 'player2',
                         updatedAt: Date.now()
                     }
                 },
@@ -331,7 +335,15 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
         if (!req.user || !req.user.userId || req.params.userId.toString() !== req.user.userId.toString()) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
-        const games = await Game.find({ singlePlayerId: req.params.userId }).sort({ createdAt: -1 });
+        const games = await Game.find({
+            $or: [
+                { singlePlayerId: req.params.userId },
+                { player2Id: req.params.userId }
+            ]
+        })
+            .sort({ createdAt: -1 })
+            .populate('singlePlayerId', 'username')
+            .populate('player2Id', 'username');
         res.json(games);
     } catch (err) {
         res.status(500).json({ error: err.message });

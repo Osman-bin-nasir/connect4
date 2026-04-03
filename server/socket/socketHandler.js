@@ -359,6 +359,7 @@ module.exports = (io) => {
                         gameMode: '1v1',
                         singlePlayerId: game.singlePlayerId,
                         player2Id: game.player2Id,
+                        currentTurn: 'player2',
                         isPublic: game.isPublic,
                         turnDuration: game.turnDuration
                     });
