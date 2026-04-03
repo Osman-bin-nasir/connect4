@@ -4,8 +4,9 @@ const Game = require('../models/Game');
 const User = require('../models/User');
 const Heart = require('../models/Heart');
 const authenticateToken = require('../middleware/auth');
+const { isHostPresent } = require('../socket/lobbyPresence');
 
-const OPEN_1V1_LOBBY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const OPEN_1V1_LOBBY_MAX_AGE_MS = 5 * 60 * 1000;
 
 // Create a new game
 router.post('/', authenticateToken, async (req, res) => {
@@ -82,28 +83,25 @@ router.get('/leaderboard', async (req, res) => {
     }
 });
 
-// Get popular games (Most Loved) - Public
-router.get('/popular', async (req, res) => {
+// Get latest completed public games - Public
+router.get('/completed/recent', async (req, res) => {
     try {
-        const mostLoved = await Game.find({ isPublic: true, heartCount: { $gt: 0 } })
-            .sort({ heartCount: -1 })
+        const recentCompleted = await Game.find({
+            isPublic: true,
+            status: 'completed'
+        })
+            .sort({ updatedAt: -1, createdAt: -1 })
             .limit(10)
             .populate('singlePlayerId', 'username');
 
-        // Transform for frontend consistency if needed, but find+populate is usually cleaner than aggregate
-        // The original aggregation had a specific project structure. Let's match it roughly or just return the docs.
-        // Frontend expects: { _id, name, status, hearts (array len?), heartCount, createdAt, singlePlayerId: { _id, username } }
-
-        // Let's use aggregation to be safe to match exact structure if strictly needed, 
-        // OR just mapping. database is cleaner now.
-        // Let's stick to aggregation for precise control but simpler now.
-
-        const result = mostLoved.map(g => ({
+        const result = recentCompleted.map(g => ({
             _id: g._id,
             name: g.name,
             status: g.status,
-            heartCount: g.heartCount, // Direct field
+            heartCount: g.heartCount,
             createdAt: g.createdAt,
+            updatedAt: g.updatedAt,
+            gameMode: g.gameMode,
             singlePlayerId: g.singlePlayerId
         }));
 
@@ -139,12 +137,14 @@ router.get('/lobbies/1v1/open', async (req, res) => {
             ]
         })
             .sort({ createdAt: -1 })
-            .limit(24)
             .select('name createdAt turnDuration status gameMode singlePlayerId')
             .populate('singlePlayerId', 'username')
             .lean();
 
-        const result = lobbies.map((game) => ({
+        const result = lobbies
+            .filter((game) => isHostPresent(game._id))
+            .slice(0, 24)
+            .map((game) => ({
             _id: game._id,
             name: game.name,
             createdAt: game.createdAt,
@@ -152,7 +152,7 @@ router.get('/lobbies/1v1/open', async (req, res) => {
             status: game.status,
             gameMode: game.gameMode,
             singlePlayerId: game.singlePlayerId
-        }));
+            }));
 
         res.json(result);
     } catch (err) {

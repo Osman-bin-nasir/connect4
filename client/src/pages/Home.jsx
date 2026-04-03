@@ -12,11 +12,13 @@ function Home() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userId, setUserId] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
-    const [popularGames, setPopularGames] = useState([]);
+    const [latestCompletedGames, setLatestCompletedGames] = useState([]);
     const [openLobbies, setOpenLobbies] = useState([]);
-    const [activeTab, setActiveTab] = useState('open1v1');
+    const [activeTab, setActiveTab] = useState('latest');
     const [showAllOpenLobbies, setShowAllOpenLobbies] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingOpenLobbies, setIsLoadingOpenLobbies] = useState(false);
+    const [hasLoadedOpenLobbies, setHasLoadedOpenLobbies] = useState(false);
     const [isRefreshingLobbies, setIsRefreshingLobbies] = useState(false);
     const [userHearts, setUserHearts] = useState([]);
     const navigate = useNavigate();
@@ -35,8 +37,7 @@ function Home() {
         async function hydrateHome() {
             await Promise.all([
                 fetchLeaderboard(),
-                fetchPopularGames(),
-                fetchOpenLobbies(),
+                fetchLatestCompletedGames(),
                 authenticated ? fetchUserHearts() : Promise.resolve()
             ]);
 
@@ -47,15 +48,53 @@ function Home() {
 
         hydrateHome();
 
-        const intervalId = window.setInterval(() => {
-            fetchOpenLobbies({ background: true });
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (activeTab !== 'open1v1') {
+            return undefined;
+        }
+
+        let isMounted = true;
+        let intervalId = null;
+
+        const loadOpenLobbies = async (background = false) => {
+            if (document.visibilityState === 'hidden') {
+                return;
+            }
+
+            await fetchOpenLobbies({ background });
+
+            if (isMounted && !background) {
+                setHasLoadedOpenLobbies(true);
+            }
+        };
+
+        loadOpenLobbies(false);
+
+        intervalId = window.setInterval(() => {
+            loadOpenLobbies(true);
         }, 15000);
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                loadOpenLobbies(true);
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
             isMounted = false;
-            window.clearInterval(intervalId);
+            if (intervalId) {
+                window.clearInterval(intervalId);
+            }
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, []);
+    }, [activeTab]);
 
     async function fetchUserHearts() {
         try {
@@ -78,12 +117,12 @@ function Home() {
         }
     }
 
-    async function fetchPopularGames() {
+    async function fetchLatestCompletedGames() {
         try {
-            const res = await axios.get(`${API_URL}/api/games/popular`);
-            setPopularGames(Array.isArray(res.data) ? res.data : []);
+            const res = await axios.get(`${API_URL}/api/games/completed/recent`);
+            setLatestCompletedGames(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
-            console.error('Failed to fetch popular games', err);
+            console.error('Failed to fetch latest completed games', err);
         }
     }
 
@@ -91,11 +130,14 @@ function Home() {
         try {
             if (background) {
                 setIsRefreshingLobbies(true);
+            } else {
+                setIsLoadingOpenLobbies(true);
             }
 
             const res = await axios.get(`${API_URL}/api/games/lobbies/1v1/open`);
             const nextLobbies = Array.isArray(res.data) ? res.data : [];
             setOpenLobbies(nextLobbies);
+            setHasLoadedOpenLobbies(true);
             if (nextLobbies.length <= 4) {
                 setShowAllOpenLobbies(false);
             }
@@ -104,6 +146,8 @@ function Home() {
         } finally {
             if (background) {
                 setIsRefreshingLobbies(false);
+            } else {
+                setIsLoadingOpenLobbies(false);
             }
         }
     }
@@ -129,7 +173,7 @@ function Home() {
                 setUserHearts(prev => [...prev, gameId]);
             }
 
-            fetchPopularGames();
+            fetchLatestCompletedGames();
         } catch (err) {
             toast.error('Failed to update heart');
         }
@@ -207,20 +251,8 @@ function Home() {
         return turnDuration === 0 ? 'Infinite turns' : `${turnDuration}s turns`;
     }
 
-    function getFeaturedGames() {
-        const allGames = Array.isArray(popularGames) ? popularGames : [];
-        const active = allGames.filter(g => g.status === 'active');
-        const completed = allGames.filter(g => g.status === 'completed');
-
-        let picked = [...active.slice(0, 2), ...completed.slice(0, 2)];
-
-        if (picked.length < 4) {
-            const pickedIds = new Set(picked.map(g => g._id));
-            const remaining = allGames.filter(g => !pickedIds.has(g._id));
-            picked = [...picked, ...remaining.slice(0, 4 - picked.length)];
-        }
-
-        return picked;
+    function getRecentCompletedGames() {
+        return Array.isArray(latestCompletedGames) ? latestCompletedGames.slice(0, 4) : [];
     }
 
     const containerVariants = {
@@ -387,7 +419,7 @@ function Home() {
         );
     }
 
-    const featuredGames = getFeaturedGames();
+    const recentCompletedGames = getRecentCompletedGames();
     const displayedOpenLobbies = showAllOpenLobbies ? openLobbies : openLobbies.slice(0, 4);
     const hasMoreOpenLobbies = openLobbies.length > 4;
 
@@ -478,17 +510,26 @@ function Home() {
                                                 : <Heart className="w-6 h-6 text-rose-500 fill-rose-500" />}
                                         </div>
                                         <h2 className="text-3xl font-bold text-white tracking-tight">
-                                            {activeTab === 'open1v1' ? 'Open 1v1' : 'Trending Games'}
+                                            {activeTab === 'open1v1' ? 'Open 1v1' : 'Latest Completed Games'}
                                         </h2>
                                     </div>
                                     <p className="text-slate-500 mt-3 max-w-2xl">
                                         {activeTab === 'open1v1'
-                                            ? 'Public head-to-head games waiting for a second player show up here automatically.'
-                                            : 'The most loved games across the arena, picked from what players are hearting right now.'}
+                                            ? 'Only live public 1v1 games with an active host appear here, and they expire fast if nobody joins.'
+                                            : 'Recent public player games that already finished. For instant play, jump into an AI game from your dashboard.'}
                                     </p>
                                 </div>
 
                                 <div className="inline-flex rounded-2xl border border-slate-700/50 bg-slate-900/60 p-1 backdrop-blur-sm">
+                                    <button
+                                        onClick={() => setActiveTab('latest')}
+                                        className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${activeTab === 'latest'
+                                            ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.08)]'
+                                            : 'text-slate-400 hover:text-slate-200'
+                                            }`}
+                                    >
+                                        Latest Games
+                                    </button>
                                     <button
                                         onClick={() => setActiveTab('open1v1')}
                                         className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${activeTab === 'open1v1'
@@ -496,24 +537,15 @@ function Home() {
                                             : 'text-slate-400 hover:text-slate-200'
                                             }`}
                                     >
-                                        Open 1v1 ({openLobbies.length})
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('trending')}
-                                        className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${activeTab === 'trending'
-                                            ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.08)]'
-                                            : 'text-slate-400 hover:text-slate-200'
-                                            }`}
-                                    >
-                                        Trending ({featuredGames.length})
+                                        Live 1v1
                                     </button>
                                 </div>
                             </div>
 
-                            {activeTab === 'open1v1' && !isLoading && (
+                            {activeTab === 'open1v1' && hasLoadedOpenLobbies && (
                                 <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
                                     <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingLobbies ? 'animate-spin text-sky-400' : ''}`} />
-                                    <span>{isRefreshingLobbies ? 'Refreshing lobby list...' : 'Refreshes every 15 seconds'}</span>
+                                    <span>{isRefreshingLobbies ? 'Refreshing live lobbies...' : 'Only refreshes while this tab is open'}</span>
                                 </div>
                             )}
                         </div>
@@ -527,7 +559,7 @@ function Home() {
                                     exit={{ opacity: 0, y: -10 }}
                                     transition={{ duration: 0.2 }}
                                 >
-                                    {isLoading ? (
+                                    {isLoadingOpenLobbies && !hasLoadedOpenLobbies ? (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                             {[1, 2, 3, 4].map((n) => (
                                                 <div key={n} className="glass-panel p-5 rounded-2xl h-52 animate-pulse">
@@ -561,16 +593,16 @@ function Home() {
                                     ) : (
                                         <div className="glass-panel p-12 rounded-2xl text-center border-dashed border-2 border-slate-700">
                                             <Users className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                                            <h3 className="text-xl font-bold text-slate-300 mb-2">No Open 1v1 Games</h3>
+                                            <h3 className="text-xl font-bold text-slate-300 mb-2">No Live 1v1 Games</h3>
                                             <p className="text-slate-500 max-w-md mx-auto">
-                                                Public 1v1 games waiting for an opponent will appear here. {isLoggedIn ? 'You can create one from your dashboard.' : 'Log in to create one and get matched faster.'}
+                                                No active hosts are waiting right now. {isLoggedIn ? 'Play AI from your dashboard for an instant match, or create a live 1v1 room when you are ready to stay.' : 'Log in to play AI or create a live 1v1 room when you are ready to stay.'}
                                             </p>
                                         </div>
                                     )}
                                 </motion.div>
                             ) : (
                                 <motion.div
-                                    key="trending"
+                                    key="latest"
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
@@ -585,15 +617,15 @@ function Home() {
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : featuredGames.length > 0 ? (
+                                    ) : recentCompletedGames.length > 0 ? (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                            {featuredGames.map(renderTrendingGameCard)}
+                                            {recentCompletedGames.map(renderTrendingGameCard)}
                                         </div>
                                     ) : (
                                         <div className="glass-panel p-12 rounded-2xl text-center border-dashed border-2 border-slate-700">
                                             <Heart className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                                            <h3 className="text-xl font-bold text-slate-300 mb-2">No Trending Games</h3>
-                                            <p className="text-slate-500">Be the first to create and popularize a game!</p>
+                                            <h3 className="text-xl font-bold text-slate-300 mb-2">No Recent Completed Games</h3>
+                                            <p className="text-slate-500">Public player games will show up here once matches start finishing.</p>
                                         </div>
                                     )}
                                 </motion.div>

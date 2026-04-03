@@ -18,7 +18,7 @@ function Dashboard() {
     const [newCrowdName, setNewCrowdName] = useState('The Crowd');
     const [selectedTime, setSelectedTime] = useState(0);
     const [isPublic, setIsPublic] = useState(true);
-    const [gameMode, setGameMode] = useState('crowd');
+    const [gameMode, setGameMode] = useState('ai');
     const [aiDifficulty, setAiDifficulty] = useState(3);
     const [editingId, setEditingId] = useState(null);
     const [editingName, setEditingName] = useState('');
@@ -91,7 +91,7 @@ function Dashboard() {
             setNewGameName('');
             setNewCrowdName('The Crowd');
             setIsPublic(true);
-            setGameMode('crowd');
+            setGameMode('ai');
             setAiDifficulty(3);
             navigate(`/game/${res.data._id}`);
         } catch (err) {
@@ -238,6 +238,11 @@ function Dashboard() {
 
     const hostedGamesCount = games.filter((game) => getGameRelationship(game) === 'hosted').length;
     const joinedGamesCount = games.filter((game) => getGameRelationship(game) === 'joined').length;
+    const filterLabels = {
+        all: 'All',
+        hosted: 'Hosted',
+        joined: 'Joined'
+    };
 
     return (
         <div className="min-h-screen pt-20 pb-12 px-4 relative overflow-x-hidden text-slate-200">
@@ -455,6 +460,7 @@ function Dashboard() {
                                             setIsCreating(false);
                                             setNewGameName('');
                                             setNewCrowdName('The Crowd');
+                                            setGameMode('ai');
                                         }}
                                         className="px-6 py-3 rounded-xl font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                                     >
@@ -560,7 +566,7 @@ function Dashboard() {
                             <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-5">
                                 <Users className="w-8 h-8 text-slate-500" />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">No {dashboardFilter} games</h3>
+                            <h3 className="text-xl font-bold text-white mb-2">No {filterLabels[dashboardFilter]} games</h3>
                             <p className="text-slate-400 max-w-md">
                                 {dashboardFilter === 'hosted'
                                     ? 'Create a new game and it will appear here.'
