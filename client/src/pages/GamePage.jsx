@@ -461,10 +461,25 @@ function GamePage() {
         player2Name = game.crowdName || 'The Crowd';
     } else if (gameMode === '1v1') {
         const p2Id = game.player2Id;
-        player2Name = (p2Id && typeof p2Id === 'object') ? p2Id.username : 'Player 2';
+        player2Name = (p2Id && typeof p2Id === 'object') ? p2Id.username : (game.status === 'waiting' ? 'Open Slot' : 'Player 2');
     } else if (gameMode === 'ai') {
         player2Name = 'AI';
     }
+
+    const isWaitingForOpponent = gameMode === '1v1' && game.status === 'waiting' && !game.player2Id;
+    const statusColor = game.status === 'completed'
+        ? (game.winner === 'player' ? '#f43f5e' : game.winner === 'player2' || game.winner === 'crowd' ? '#eab308' : '#9ca3af')
+        : isWaitingForOpponent
+            ? '#38bdf8'
+            : (game.currentTurn === 'player' ? '#f43f5e' : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? '#eab308' : '#818cf8');
+    const statusHeading = game.status === 'completed'
+        ? `Winner: ${game.winner === 'player' ? player1Name : game.winner === 'player2' || game.winner === 'crowd' ? player2Name : game.winner === 'ai' ? 'AI' : 'Draw'}`
+        : isWaitingForOpponent
+            ? 'Waiting for Player 2'
+            : `${game.currentTurn === 'player' ? player1Name : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? player2Name : 'AI'}'s Turn`;
+    const waitingStatusMessage = game.isPublic !== false
+        ? 'This public 1v1 lobby is listed in Open 1v1 on the home page.'
+        : 'This private 1v1 game can only be joined with this invite link.';
 
     return (
         <div className="min-h-screen pt-8 pb-12 px-4 flex flex-col items-center bg-gray-900 text-gray-200">
@@ -472,7 +487,7 @@ function GamePage() {
                 {/* Top Action Bar */}
                 <div className="flex flex-wrap md:flex-nowrap justify-between items-center gap-4 mb-8">
                     <button
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate(userId ? '/dashboard' : '/')}
                         className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-xl transition-colors flex items-center gap-2 font-bold"
                     >
                         <ArrowLeft className="w-4 h-4" />
@@ -653,21 +668,29 @@ function GamePage() {
                     <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-lg text-center w-full max-w-xl flex flex-col overflow-hidden relative">
                         {/* Status Message Section */}
                         <div className="flex flex-col items-center justify-center py-4 sm:py-5 px-4 transition-all duration-300">
-                            <h2 className="text-xl sm:text-2xl font-bold transition-colors duration-300" style={{
-                                color: game.status === 'completed'
-                                    ? (game.winner === 'player' ? '#f43f5e' : game.winner === 'player2' || game.winner === 'crowd' ? '#eab308' : '#9ca3af')
-                                    : (game.currentTurn === 'player' ? '#f43f5e' : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? '#eab308' : '#818cf8')
-                            }}>
-                                {game.status === 'completed' ? (
-                                    <>Winner: {game.winner === 'player' ? player1Name : game.winner === 'player2' || game.winner === 'crowd' ? player2Name : game.winner === 'ai' ? 'AI' : 'Draw'}</>
-                                ) : (
-                                    <>{game.currentTurn === 'player' ? player1Name : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? player2Name : 'AI'}'s Turn</>
-                                )}
+                            <h2 className="text-xl sm:text-2xl font-bold transition-colors duration-300" style={{ color: statusColor }}>
+                                {statusHeading}
                             </h2>
                         </div>
 
                         {/* Adaptive Controls Area */}
                         <AnimatePresence>
+                            {isWaitingForOpponent && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="px-4 pb-4 sm:px-6 sm:pb-6 overflow-hidden"
+                                >
+                                    <div className="pt-4 border-t border-gray-700">
+                                        <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm font-semibold text-sky-200">
+                                            {waitingStatusMessage}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
                             {/* Rematch Button */}
                             {game.status === 'completed' && gameMode === '1v1' && (role === 'player' || role === 'player2') && (
                                 <motion.div

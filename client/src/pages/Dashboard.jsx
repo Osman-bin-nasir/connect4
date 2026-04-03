@@ -379,6 +379,12 @@ function Dashboard() {
                                     </div>
                                 </div>
 
+                                {gameMode === '1v1' && (
+                                    <div className="mb-8 rounded-2xl border border-sky-500/20 bg-sky-500/10 px-4 py-3 text-sm text-sky-200">
+                                        Public 1v1 games appear in the Home page&apos;s Open 1v1 tab. Private 1v1 games can still be joined, but only through a direct invite link.
+                                    </div>
+                                )}
+
                                 <div className="flex justify-end gap-4 pt-6 border-t border-slate-700/50 mt-8">
                                     <button
                                         onClick={() => {

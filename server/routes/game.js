@@ -111,6 +111,52 @@ router.get('/popular', async (req, res) => {
     }
 });
 
+// Get all games hearted by user
+router.get('/my-hearts', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const hearts = await Heart.find({ user: userId }).select('game');
+        const gameIds = hearts.map(h => h.game);
+        res.json(gameIds);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get open public 1v1 lobbies - Public
+router.get('/lobbies/1v1/open', async (req, res) => {
+    try {
+        const lobbies = await Game.find({
+            gameMode: '1v1',
+            status: 'waiting',
+            isPublic: true,
+            $or: [
+                { player2Id: { $exists: false } },
+                { player2Id: null }
+            ]
+        })
+            .sort({ createdAt: -1 })
+            .limit(24)
+            .select('name createdAt turnDuration status gameMode singlePlayerId')
+            .populate('singlePlayerId', 'username')
+            .lean();
+
+        const result = lobbies.map((game) => ({
+            _id: game._id,
+            name: game.name,
+            createdAt: game.createdAt,
+            turnDuration: game.turnDuration,
+            status: game.status,
+            gameMode: game.gameMode,
+            singlePlayerId: game.singlePlayerId
+        }));
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Heart a game
 router.post('/:id/heart', authenticateToken, async (req, res) => {
     try {
@@ -191,6 +237,61 @@ router.post('/:id/join', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const { role } = req.body; // role: 'player' or 'crowd' or 'player2'
     try {
+        if (role === 'player2') {
+            const existingGame = await Game.findById(req.params.id).select('singlePlayerId player2Id gameMode status');
+
+            if (!existingGame) {
+                return res.status(404).json({ error: 'Game not found' });
+            }
+
+            if (existingGame.gameMode !== '1v1') {
+                return res.status(400).json({ error: 'This is not a 1v1 game' });
+            }
+
+            if (existingGame.singlePlayerId.toString() === userId) {
+                return res.status(400).json({ error: 'Cannot join your own game as player 2' });
+            }
+
+            if (existingGame.player2Id) {
+                if (existingGame.player2Id.toString() === userId) {
+                    const populatedExistingGame = await Game.findById(existingGame._id)
+                        .populate('singlePlayerId', 'username')
+                        .populate('player2Id', 'username');
+                    return res.json(populatedExistingGame);
+                }
+
+                return res.status(409).json({ error: 'This 1v1 lobby is no longer open' });
+            }
+
+            const joinedGame = await Game.findOneAndUpdate(
+                {
+                    _id: req.params.id,
+                    gameMode: '1v1',
+                    status: 'waiting',
+                    $or: [
+                        { player2Id: { $exists: false } },
+                        { player2Id: null }
+                    ]
+                },
+                {
+                    $set: {
+                        player2Id: userId,
+                        status: 'active',
+                        updatedAt: Date.now()
+                    }
+                },
+                { new: true }
+            )
+                .populate('singlePlayerId', 'username')
+                .populate('player2Id', 'username');
+
+            if (!joinedGame) {
+                return res.status(409).json({ error: 'This 1v1 lobby is no longer open' });
+            }
+
+            return res.json(joinedGame);
+        }
+
         const game = await Game.findById(req.params.id);
         if (!game) return res.status(404).json({ error: 'Game not found' });
 
@@ -203,21 +304,6 @@ router.post('/:id/join', authenticateToken, async (req, res) => {
             } else {
                 game.singlePlayerId = userId;
             }
-            game.status = 'active';
-            await game.save();
-        } else if (role === 'player2') {
-            // Join as player 2 in 1v1 mode
-            if (game.gameMode !== '1v1') {
-                return res.status(400).json({ error: 'This is not a 1v1 game' });
-            }
-            if (game.player2Id) {
-                return res.status(400).json({ error: 'Player 2 already joined' });
-            }
-            if (game.singlePlayerId.toString() === userId) {
-                return res.status(400).json({ error: 'Cannot join your own game as player 2' });
-            }
-
-            game.player2Id = userId;
             game.status = 'active';
             await game.save();
         }
@@ -362,18 +448,6 @@ router.get('/:id/is-hearted', authenticateToken, async (req, res) => {
         const userId = req.user.userId;
         const exists = await Heart.exists({ user: userId, game: req.params.id });
         res.json({ isHearted: !!exists });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Get all games hearted by user
-router.get('/my-hearts', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        const hearts = await Heart.find({ user: userId }).select('game');
-        const gameIds = hearts.map(h => h.game);
-        res.json(gameIds);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
