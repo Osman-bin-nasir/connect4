@@ -516,7 +516,7 @@ function Home() {
                                     <p className="text-slate-500 mt-3 max-w-2xl">
                                         {activeTab === 'open1v1'
                                             ? 'Only live public 1v1 games with an active host appear here, and they expire fast if nobody joins.'
-                                            : 'Recent public player games that already finished. For instant play, jump into an AI game from your dashboard.'}
+                                            : 'Recent public 1v1 and AI games that already finished. For instant play, jump into an AI game from your dashboard.'}
                                     </p>
                                 </div>
 

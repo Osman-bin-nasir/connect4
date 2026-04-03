@@ -83,26 +83,94 @@ router.get('/leaderboard', async (req, res) => {
     }
 });
 
-// Get latest completed public games - Public
+// Get latest completed public 1v1 and AI games - Public
 router.get('/completed/recent', async (req, res) => {
     try {
         const recentCompleted = await Game.find({
             isPublic: true,
-            status: 'completed'
+            status: 'completed',
+            gameMode: { $in: ['1v1', 'ai'] }
         })
             .sort({ updatedAt: -1, createdAt: -1 })
-            .limit(10)
+            .limit(60)
             .populate('singlePlayerId', 'username');
 
-        const result = recentCompleted.map(g => ({
-            _id: g._id,
-            name: g.name,
-            status: g.status,
-            heartCount: g.heartCount,
-            createdAt: g.createdAt,
-            updatedAt: g.updatedAt,
-            gameMode: g.gameMode,
-            singlePlayerId: g.singlePlayerId
+        const hostEntriesById = new Map();
+
+        recentCompleted.forEach((game) => {
+            const hostId = game.singlePlayerId?._id?.toString() || `game:${game._id.toString()}`;
+            const existingEntry = hostEntriesById.get(hostId);
+
+            if (!existingEntry) {
+                hostEntriesById.set(hostId, {
+                    hostId,
+                    mostRecent: game,
+                    mostRecentNonAi: game.gameMode !== 'ai' ? game : null
+                });
+                return;
+            }
+
+            if (!existingEntry.mostRecentNonAi && game.gameMode !== 'ai') {
+                existingEntry.mostRecentNonAi = game;
+            }
+        });
+
+        const getGameTimestamp = (game) => new Date(game.updatedAt || game.createdAt).getTime();
+        const hostEntries = Array.from(hostEntriesById.values()).sort(
+            (a, b) => getGameTimestamp(b.mostRecent) - getGameTimestamp(a.mostRecent)
+        );
+
+        const MAX_RESULTS = 10;
+        const VISIBLE_RESULTS = 4;
+
+        let curatedEntries = hostEntries
+            .slice(0, MAX_RESULTS)
+            .map((entry) => ({ hostId: entry.hostId, game: entry.mostRecent }));
+
+        const visibleCount = Math.min(VISIBLE_RESULTS, curatedEntries.length);
+        const hasVisibleHumanGame = curatedEntries
+            .slice(0, visibleCount)
+            .some((entry) => entry.game.gameMode !== 'ai');
+
+        if (!hasVisibleHumanGame && visibleCount > 0) {
+            const nonAiCandidate = hostEntries
+                .filter((entry) => entry.mostRecentNonAi)
+                .sort((a, b) => getGameTimestamp(b.mostRecentNonAi) - getGameTimestamp(a.mostRecentNonAi))[0];
+
+            if (nonAiCandidate) {
+                const visibleIndex = curatedEntries
+                    .slice(0, visibleCount)
+                    .findIndex((entry) => entry.hostId === nonAiCandidate.hostId);
+
+                if (visibleIndex >= 0) {
+                    curatedEntries[visibleIndex] = {
+                        hostId: nonAiCandidate.hostId,
+                        game: nonAiCandidate.mostRecentNonAi
+                    };
+                } else {
+                    const promotedVisibleEntries = [
+                        ...curatedEntries.slice(0, Math.max(0, visibleCount - 1)),
+                        { hostId: nonAiCandidate.hostId, game: nonAiCandidate.mostRecentNonAi }
+                    ];
+                    const promotedHostIds = new Set(promotedVisibleEntries.map((entry) => entry.hostId));
+                    const remainingEntries = hostEntries
+                        .filter((entry) => !promotedHostIds.has(entry.hostId))
+                        .map((entry) => ({ hostId: entry.hostId, game: entry.mostRecent }));
+
+                    curatedEntries = [...promotedVisibleEntries, ...remainingEntries].slice(0, MAX_RESULTS);
+                }
+            }
+        }
+
+        const result = curatedEntries.map(({ game }) => ({
+            _id: game._id,
+            name: game.name,
+            status: game.status,
+            heartCount: game.heartCount,
+            createdAt: game.createdAt,
+            updatedAt: game.updatedAt,
+            gameMode: game.gameMode,
+            singlePlayerId: game.singlePlayerId
         }));
 
         res.json(result);
