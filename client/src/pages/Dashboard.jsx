@@ -11,6 +11,8 @@ function Dashboard() {
     const [games, setGames] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [username, setUsername] = useState('');
+    const [currentUserId, setCurrentUserId] = useState('');
+    const [dashboardFilter, setDashboardFilter] = useState('all');
     const [isCreating, setIsCreating] = useState(false);
     const [newGameName, setNewGameName] = useState('');
     const [newCrowdName, setNewCrowdName] = useState('The Crowd');
@@ -32,6 +34,7 @@ function Dashboard() {
             return;
         }
 
+        setCurrentUserId(userId);
         setUsername(storedUsername);
         fetchGames();
     }, [navigate]);
@@ -174,6 +177,67 @@ function Dashboard() {
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
     };
+
+    const getRefId = (value) => {
+        if (!value) return null;
+        return typeof value === 'object' ? value._id?.toString() : value.toString();
+    };
+
+    const getRoleName = (game, slot) => {
+        const player1Name = game.singlePlayerId?.username || 'Player 1';
+
+        if (slot === 'player') {
+            return player1Name;
+        }
+
+        if (slot === 'player2') {
+            if (game.gameMode === '1v1') {
+                return game.player2Id?.username || (game.status === 'waiting' ? 'Open Slot' : 'Player 2');
+            }
+
+            if (game.gameMode === 'ai') {
+                return 'AI';
+            }
+
+            return game.crowdName || 'The Crowd';
+        }
+
+        if (slot === 'crowd') {
+            return game.crowdName || 'The Crowd';
+        }
+
+        if (slot === 'ai') {
+            return 'AI';
+        }
+
+        return 'Unknown';
+    };
+
+    const getGameRelationship = (game) => {
+        const ownerId = getRefId(game.singlePlayerId);
+        const player2Id = getRefId(game.player2Id);
+
+        if (ownerId === currentUserId) {
+            return 'hosted';
+        }
+
+        if (player2Id === currentUserId) {
+            return 'joined';
+        }
+
+        return 'other';
+    };
+
+    const filteredGames = games.filter((game) => {
+        if (dashboardFilter === 'all') {
+            return true;
+        }
+
+        return getGameRelationship(game) === dashboardFilter;
+    });
+
+    const hostedGamesCount = games.filter((game) => getGameRelationship(game) === 'hosted').length;
+    const joinedGamesCount = games.filter((game) => getGameRelationship(game) === 'joined').length;
 
     return (
         <div className="min-h-screen pt-20 pb-12 px-4 relative overflow-x-hidden text-slate-200">
@@ -416,8 +480,44 @@ function Dashboard() {
                 >
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-1.5 h-8 bg-white rounded-full"></div>
-                        <h2 className="text-3xl font-bold text-white">Active Games</h2>
-                        <span className="ml-2 bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-sm font-bold border border-slate-700">{games.length}</span>
+                        <h2 className="text-3xl font-bold text-white">Your Games</h2>
+                        <span className="ml-2 bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-sm font-bold border border-slate-700">{filteredGames.length}</span>
+                    </div>
+
+                    <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="inline-flex w-fit rounded-2xl border border-slate-700/50 bg-slate-900/60 p-1 backdrop-blur-sm">
+                            <button
+                                onClick={() => setDashboardFilter('all')}
+                                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${dashboardFilter === 'all'
+                                    ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.08)]'
+                                    : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                            >
+                                All ({games.length})
+                            </button>
+                            <button
+                                onClick={() => setDashboardFilter('hosted')}
+                                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${dashboardFilter === 'hosted'
+                                    ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.08)]'
+                                    : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                            >
+                                Hosted ({hostedGamesCount})
+                            </button>
+                            <button
+                                onClick={() => setDashboardFilter('joined')}
+                                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${dashboardFilter === 'joined'
+                                    ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.08)]'
+                                    : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                            >
+                                Joined ({joinedGamesCount})
+                            </button>
+                        </div>
+
+                        <p className="text-sm text-slate-500">
+                            Filter your dashboard by games you host or head-to-head games you joined.
+                        </p>
                     </div>
 
                     {isLoading ? (
@@ -446,14 +546,26 @@ function Dashboard() {
                             <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-6">
                                 <Zap className="w-10 h-10 text-slate-600" />
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">No Active Games</h3>
-                            <p className="text-slate-400 text-lg mb-8 max-w-md">Your command center is empty. Forge a new arena to begin your conquest.</p>
+                            <h3 className="text-2xl font-bold text-white mb-2">No Games Yet</h3>
+                            <p className="text-slate-400 text-lg mb-8 max-w-md">Create a game or join an open 1v1 match and it will show up here.</p>
                             <button
                                 onClick={() => setIsCreating(true)}
                                 className="bg-white/10 hover:bg-white/20 text-white border border-white/30 hover:border-white/60 px-8 py-3 rounded-xl font-bold hover:-translate-y-1 transition-transform"
                             >
                                 Get Started
                             </button>
+                        </div>
+                    ) : filteredGames.length === 0 ? (
+                        <div className="glass-panel p-12 rounded-3xl text-center border-dashed border-2 border-slate-700 flex flex-col items-center">
+                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-5">
+                                <Users className="w-8 h-8 text-slate-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">No {dashboardFilter} games</h3>
+                            <p className="text-slate-400 max-w-md">
+                                {dashboardFilter === 'hosted'
+                                    ? 'Create a new game and it will appear here.'
+                                    : 'Join an open 1v1 match and it will appear here.'}
+                            </p>
                         </div>
                     ) : (
                         <motion.div
@@ -463,145 +575,165 @@ function Dashboard() {
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                         >
                             <AnimatePresence>
-                                {games.map((game) => (
-                                    <motion.div
-                                        variants={itemVariants}
-                                        layout
-                                        key={game._id}
-                                        className="glass-panel p-6 rounded-2xl relative group overflow-hidden border border-slate-700/50 hover:border-white/30 transition-colors flex flex-col h-full"
-                                    >
-                                        {/* Status Glow */}
-                                        <div className={`absolute top-0 right-0 w-32 h-32 blur-[64px] rounded-full -z-10 opacity-20 transition-opacity duration-500 group-hover:opacity-40
-                                            ${game.status === 'active' ? 'bg-emerald-500' : game.status === 'completed' ? 'bg-slate-500' : 'bg-amber-500'}`}
-                                        ></div>
+                                {filteredGames.map((game) => {
+                                    const ownerId = getRefId(game.singlePlayerId);
+                                    const isOwner = ownerId === currentUserId;
+                                    const player2Id = getRefId(game.player2Id);
+                                    const isJoinedPlayer = player2Id === currentUserId;
+                                    const roleBadge = isOwner ? 'Host' : isJoinedPlayer ? 'Joined' : 'Viewer';
+                                    const activeTurnLabel = game.status === 'waiting' && game.gameMode === '1v1'
+                                        ? 'Waiting for opponent'
+                                        : getRoleName(game, game.currentTurn);
+                                    const winnerLabel = game.winner ? getRoleName(game, game.winner) : null;
 
-                                        {editingId === game._id ? (
-                                            <div className="mb-4 z-10 flex-1">
-                                                <input
-                                                    type="text"
-                                                    value={editingName}
-                                                    onChange={(e) => setEditingName(e.target.value)}
-                                                    className="w-full bg-slate-900 border border-white/50 text-white px-4 py-2.5 rounded-lg outline-none focus:ring-2 focus:ring-white/20 mb-3 font-bold text-lg"
-                                                    autoFocus
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleRename(game._id)}
-                                                />
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => handleRename(game._id)}
-                                                        className="flex-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 py-2 rounded-lg text-sm font-bold hover:bg-emerald-600/30 transition-colors"
-                                                    >
-                                                        Save
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setEditingId(null)}
-                                                        className="flex-1 bg-slate-800 text-slate-300 py-2 border border-slate-700 rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col h-full z-10">
-                                                <div className="flex items-start justify-between mb-4 gap-3">
-                                                    <h3 className="text-xl font-bold text-white group-hover:text-slate-300 transition-colors line-clamp-2 leading-tight flex-1">
-                                                        {game.name}
-                                                    </h3>
-                                                    <div className="flex flex-col gap-2 items-end shrink-0">
-                                                        {/* Game Mode Badge */}
-                                                        <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${game.gameMode === 'ai'
-                                                            ? 'bg-slate-500/10 text-slate-300 border-slate-500/20'
-                                                            : game.gameMode === '1v1'
-                                                                ? 'bg-slate-500/10 text-slate-300 border-slate-500/20'
-                                                                : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                                                            }`}>
-                                                            {game.gameMode === 'ai' ? '🤖 AI' : game.gameMode === '1v1' ? '👥 1v1' : '🎭 Crowd'}
-                                                        </span>
-                                                        {/* Details Badge */}
-                                                        <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase flex items-center gap-1 ${game.isPublic !== false
-                                                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                                            : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
-                                                            }`}>
-                                                            {game.isPublic !== false ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                                                            {game.isPublic !== false ? 'Public' : 'Private'}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                    return (
+                                        <motion.div
+                                            variants={itemVariants}
+                                            layout
+                                            key={game._id}
+                                            className="glass-panel p-6 rounded-2xl relative group overflow-hidden border border-slate-700/50 hover:border-white/30 transition-colors flex flex-col h-full"
+                                        >
+                                            {/* Status Glow */}
+                                            <div className={`absolute top-0 right-0 w-32 h-32 blur-[64px] rounded-full -z-10 opacity-20 transition-opacity duration-500 group-hover:opacity-40
+                                                ${game.status === 'active' ? 'bg-emerald-500' : game.status === 'completed' ? 'bg-slate-500' : 'bg-amber-500'}`}
+                                            ></div>
 
-                                                <div className="space-y-2.5 text-sm mb-6 flex-1 text-slate-400 bg-slate-900/40 p-4 rounded-xl border border-slate-800/50">
-                                                    <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-                                                        <span className="text-slate-500">Status</span>
-                                                        <span className={`font-bold uppercase tracking-wider text-xs px-2 py-0.5 rounded
-                                                            ${game.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' :
-                                                                game.status === 'completed' ? 'bg-slate-800 text-slate-400' : 'bg-amber-500/10 text-amber-400'}`}
-                                                        >
-                                                            {game.status}
-                                                        </span>
-                                                    </div>
-
-                                                    {game.status !== 'completed' && (
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-slate-500">Turn</span>
-                                                            <span className="font-bold text-white truncate max-w-[120px]">
-                                                                {game.currentTurn === 'player' ? username : (game.crowdName || 'The Crowd')}
-                                                            </span>
-                                                        </div>
-                                                    )}
-
-                                                    {game.winner && (
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-slate-500">Winner</span>
-                                                            <span className="font-bold text-amber-400 truncate max-w-[120px]">
-                                                                {game.winner === 'player' ? username : (game.crowdName || 'The Crowd')}
-                                                            </span>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-800">
-                                                        <div className="flex items-center gap-1.5 font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-lg">
-                                                            <Heart className="w-3.5 h-3.5 fill-current" />
-                                                            <span>{game.heartCount || 0}</span>
-                                                        </div>
-                                                        <span className="text-xs font-mono text-slate-600" title={game._id}>
-                                                            ...{game._id.slice(-6)}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex gap-2 relative mt-auto">
-                                                    <button
-                                                        onClick={() => navigate(`/game/${game._id}`)}
-                                                        className={`flex-1 py-2.5 rounded-xl font-bold transition-all group/btn flex justify-center items-center gap-2 ${game.status === 'completed'
-                                                            ? 'bg-slate-700/50 text-slate-400 border border-slate-600/50 cursor-default'
-                                                            : 'bg-white/5 hover:bg-white/15 text-white border border-white/40 hover:border-white/70'
-                                                            }`}
-                                                    >
-                                                        <span>{game.status === 'completed' ? 'View Game' : 'Resume'}</span>
-                                                        <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                                                    </button>
+                                            {editingId === game._id && isOwner ? (
+                                                <div className="mb-4 z-10 flex-1">
+                                                    <input
+                                                        type="text"
+                                                        value={editingName}
+                                                        onChange={(e) => setEditingName(e.target.value)}
+                                                        className="w-full bg-slate-900 border border-white/50 text-white px-4 py-2.5 rounded-lg outline-none focus:ring-2 focus:ring-white/20 mb-3 font-bold text-lg"
+                                                        autoFocus
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleRename(game._id)}
+                                                    />
                                                     <div className="flex gap-2">
                                                         <button
-                                                            onClick={() => {
-                                                                setEditingId(game._id);
-                                                                setEditingName(game.name);
-                                                            }}
-                                                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2.5 rounded-xl transition-all border border-slate-700 relative group/edit"
-                                                            title="Rename"
+                                                            onClick={() => handleRename(game._id)}
+                                                            className="flex-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 py-2 rounded-lg text-sm font-bold hover:bg-emerald-600/30 transition-colors"
                                                         >
-                                                            <Edit2 className="w-5 h-5" />
+                                                            Save
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDelete(game._id, game.name)}
-                                                            className="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-500 p-2.5 rounded-xl transition-all"
-                                                            title="Delete"
+                                                            onClick={() => setEditingId(null)}
+                                                            className="flex-1 bg-slate-800 text-slate-300 py-2 border border-slate-700 rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors"
                                                         >
-                                                            <Trash2 className="w-5 h-5" />
+                                                            Cancel
                                                         </button>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                ))}
+                                            ) : (
+                                                <div className="flex flex-col h-full z-10">
+                                                    <div className="flex items-start justify-between mb-4 gap-3">
+                                                        <h3 className="text-xl font-bold text-white group-hover:text-slate-300 transition-colors line-clamp-2 leading-tight flex-1">
+                                                            {game.name}
+                                                        </h3>
+                                                        <div className="flex flex-col gap-2 items-end shrink-0">
+                                                            {/* Game Mode Badge */}
+                                                            <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${game.gameMode === 'ai'
+                                                                ? 'bg-slate-500/10 text-slate-300 border-slate-500/20'
+                                                                : game.gameMode === '1v1'
+                                                                    ? 'bg-slate-500/10 text-slate-300 border-slate-500/20'
+                                                                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                                                }`}>
+                                                                {game.gameMode === 'ai' ? 'AI' : game.gameMode === '1v1' ? '1v1' : 'Crowd'}
+                                                            </span>
+                                                            <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${isOwner
+                                                                ? 'bg-sky-500/10 text-sky-300 border-sky-500/20'
+                                                                : 'bg-violet-500/10 text-violet-300 border-violet-500/20'
+                                                                }`}>
+                                                                {roleBadge}
+                                                            </span>
+                                                            {/* Details Badge */}
+                                                            <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase flex items-center gap-1 ${game.isPublic !== false
+                                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                                : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                                                                }`}>
+                                                                {game.isPublic !== false ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                                                                {game.isPublic !== false ? 'Public' : 'Private'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2.5 text-sm mb-6 flex-1 text-slate-400 bg-slate-900/40 p-4 rounded-xl border border-slate-800/50">
+                                                        <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                                                            <span className="text-slate-500">Status</span>
+                                                            <span className={`font-bold uppercase tracking-wider text-xs px-2 py-0.5 rounded
+                                                                ${game.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' :
+                                                                    game.status === 'completed' ? 'bg-slate-800 text-slate-400' : 'bg-amber-500/10 text-amber-400'}`}
+                                                            >
+                                                                {game.status}
+                                                            </span>
+                                                        </div>
+
+                                                        {game.status !== 'completed' && (
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-slate-500">{game.status === 'waiting' && game.gameMode === '1v1' ? 'Match' : 'Turn'}</span>
+                                                                <span className="font-bold text-white truncate max-w-[120px]">
+                                                                    {activeTurnLabel}
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        {game.winner && (
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-slate-500">Winner</span>
+                                                                <span className="font-bold text-amber-400 truncate max-w-[120px]">
+                                                                    {winnerLabel}
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-800">
+                                                            <div className="flex items-center gap-1.5 font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-lg">
+                                                                <Heart className="w-3.5 h-3.5 fill-current" />
+                                                                <span>{game.heartCount || 0}</span>
+                                                            </div>
+                                                            <span className="text-xs font-mono text-slate-600" title={game._id}>
+                                                                ...{game._id.slice(-6)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex gap-2 relative mt-auto">
+                                                        <button
+                                                            onClick={() => navigate(`/game/${game._id}`)}
+                                                            className={`flex-1 py-2.5 rounded-xl font-bold transition-all group/btn flex justify-center items-center gap-2 ${game.status === 'completed'
+                                                                ? 'bg-slate-700/50 text-slate-400 border border-slate-600/50 cursor-default'
+                                                                : 'bg-white/5 hover:bg-white/15 text-white border border-white/40 hover:border-white/70'
+                                                                }`}
+                                                        >
+                                                            <span>{game.status === 'completed' ? 'View Game' : 'Resume'}</span>
+                                                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                        </button>
+                                                        {isOwner && (
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setEditingId(game._id);
+                                                                        setEditingName(game.name);
+                                                                    }}
+                                                                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2.5 rounded-xl transition-all border border-slate-700 relative group/edit"
+                                                                    title="Rename"
+                                                                >
+                                                                    <Edit2 className="w-5 h-5" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDelete(game._id, game.name)}
+                                                                    className="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-500 p-2.5 rounded-xl transition-all"
+                                                                    title="Delete"
+                                                                >
+                                                                    <Trash2 className="w-5 h-5" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    );
+                                })}
                             </AnimatePresence>
                         </motion.div>
                     )}
