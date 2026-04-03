@@ -1,6 +1,7 @@
 const Game = require('../models/Game');
 const { checkWin, checkDraw, makeMove } = require('../utils/gameLogic');
 const { getBestMove } = require('../utils/aiPlayer');
+const { clearSocketPresence, markHostPresent } = require('./lobbyPresence');
 
 // In-memory storage
 const gameVotes = {}; // { gameId: { col0: 5, col1: 2 } }
@@ -80,6 +81,7 @@ module.exports = (io) => {
         console.log('User connected:', socket.id, socket.user ? `(Auth: ${socket.user.userId})` : '(Guest)');
 
         socket.on('join_game', async ({ gameId, role }) => {
+            clearSocketPresence(socket.id);
             socket.join(gameId);
             gameLastActivity[gameId] = Date.now();
             console.log(`User ${socket.id} joined game ${gameId} as ${role}`);
@@ -88,6 +90,17 @@ module.exports = (io) => {
                 .populate('singlePlayerId', 'username')
                 .populate('player2Id', 'username');
             if (game) {
+                const isWaitingHost = socket.user
+                    && role === 'player'
+                    && game.gameMode === '1v1'
+                    && game.status === 'waiting'
+                    && game.singlePlayerId
+                    && game.singlePlayerId._id.toString() === socket.user.userId;
+
+                if (isWaitingHost) {
+                    markHostPresent(socket.id, gameId);
+                }
+
                 socket.emit('game_state', game);
                 socket.emit('game_state', game);
 
@@ -297,6 +310,7 @@ module.exports = (io) => {
         });
 
         socket.on('disconnect', () => {
+            clearSocketPresence(socket.id);
             console.log('User disconnected:', socket.id);
         });
 
