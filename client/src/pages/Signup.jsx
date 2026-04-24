@@ -4,7 +4,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { User, Mail, Lock, CheckCircle2, Home, Eye, EyeOff } from 'lucide-react';
-import API_URL from '../config';
+import API_URL, { PUBLIC_SIGNUP_ENABLED, SIGNUP_EMAIL_REQUIRED } from '../config';
 
 function Signup() {
     const [username, setUsername] = useState('');
@@ -19,10 +19,20 @@ function Signup() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (!PUBLIC_SIGNUP_ENABLED) {
+            toast.error('Account creation is temporarily paused while we stop signup abuse.', { style: { background: '#ef4444', color: '#fff' } });
+            return;
+        }
+
         if (isLoading) return;
 
-        if (!username || !password || !confirmPassword) {
+        if (!username || !password || !confirmPassword || (SIGNUP_EMAIL_REQUIRED && !email)) {
             toast.error('Please fill in all required fields', { style: { background: '#334155', color: '#fff' } });
+            return;
+        }
+
+        if (!/^[A-Za-z0-9_]{3,24}$/.test(username.trim())) {
+            toast.error('Username must be 3-24 characters and use only letters, numbers, or underscores.', { style: { background: '#334155', color: '#fff' } });
             return;
         }
 
@@ -31,18 +41,18 @@ function Signup() {
             return;
         }
 
-        if (password.length < 6) {
-            toast.error('Password must be at least 6 characters', { style: { background: '#334155', color: '#fff' } });
+        if (password.length < 10) {
+            toast.error('Password must be at least 10 characters', { style: { background: '#334155', color: '#fff' } });
             return;
         }
 
         setIsLoading(true);
         try {
             const payload = {
-                username,
+                username: username.trim(),
                 password
             };
-            if (email) payload.email = email;
+            if (email) payload.email = email.trim();
 
             const res = await axios.post(`${API_URL}/api/auth/signup`, payload);
 
@@ -89,8 +99,18 @@ function Signup() {
                         <h1 className="text-3xl font-black mb-2 text-white">
                             Create Account
                         </h1>
-                        <p className="text-slate-400 text-sm">Join the community and start playing</p>
+                        <p className="text-slate-400 text-sm">
+                            {PUBLIC_SIGNUP_ENABLED
+                                ? 'Join the community and start playing'
+                                : 'Account creation is temporarily paused while we stop signup abuse'}
+                        </p>
                     </div>
+
+                    {!PUBLIC_SIGNUP_ENABLED && (
+                        <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                            Existing players can still log in. New registrations are paused until the abuse is contained.
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-1.5">
@@ -103,6 +123,7 @@ function Signup() {
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
+                                    disabled={!PUBLIC_SIGNUP_ENABLED}
                                     className="w-full bg-slate-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-slate-700/50 focus:border-white/50 focus:ring-2 focus:ring-white/10 outline-none transition-all placeholder:text-slate-600 text-sm"
                                     placeholder="Choose a username"
                                 />
@@ -110,7 +131,9 @@ function Signup() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">Email <span className="text-slate-500 normal-case tracking-normal text-[10px] ml-1">(Optional)</span></label>
+                            <label className="block text-xs font-bold text-slate-300 ml-1 uppercase tracking-wider">
+                                Email {SIGNUP_EMAIL_REQUIRED ? <span className="text-red-500">*</span> : <span className="text-slate-500 normal-case tracking-normal text-[10px] ml-1">(Optional)</span>}
+                            </label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                     <Mail className="h-4 w-4 text-slate-500 group-focus-within:text-white transition-colors" />
@@ -119,11 +142,16 @@ function Signup() {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
+                                    disabled={!PUBLIC_SIGNUP_ENABLED}
                                     className="w-full bg-slate-900/50 text-white pl-10 pr-4 py-3 rounded-xl border border-slate-700/50 focus:border-white/50 focus:ring-2 focus:ring-white/10 outline-none transition-all placeholder:text-slate-600 text-sm"
                                     placeholder="your@email.com"
                                 />
                             </div>
-                            <p className="text-[10px] text-slate-500 ml-1">An email will help with account recovery if you forget your password.</p>
+                            <p className="text-[10px] text-slate-500 ml-1">
+                                {SIGNUP_EMAIL_REQUIRED
+                                    ? 'Email is required while signup protections are enabled.'
+                                    : 'An email will help with account recovery if you forget your password.'}
+                            </p>
                         </div>
 
                         <div className="space-y-1.5">
@@ -136,6 +164,7 @@ function Signup() {
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    disabled={!PUBLIC_SIGNUP_ENABLED}
                                     className="w-full bg-slate-900/50 text-white pl-10 pr-10 py-3 rounded-xl border border-slate-700/50 focus:border-white/50 focus:ring-2 focus:ring-white/10 outline-none transition-all placeholder:text-slate-600 text-sm"
                                     placeholder="••••••••"
                                 />
@@ -160,6 +189,7 @@ function Signup() {
                                     type={showConfirmPassword ? "text" : "password"}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
+                                    disabled={!PUBLIC_SIGNUP_ENABLED}
                                     className="w-full bg-slate-900/50 text-white pl-10 pr-10 py-3 rounded-xl border border-slate-700/50 focus:border-white/50 focus:ring-2 focus:ring-white/10 outline-none transition-all placeholder:text-slate-600 text-sm"
                                     placeholder="••••••••"
                                 />
@@ -178,11 +208,13 @@ function Signup() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isLoading || !PUBLIC_SIGNUP_ENABLED}
                             className={`w-full mt-6 bg-white/10 hover:bg-white/20 border border-white/30 hover:border-white/60 px-6 py-3.5 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            {isLoading ? 'Creating Account...' : (
+                            {isLoading ? 'Creating Account...' : PUBLIC_SIGNUP_ENABLED ? (
                                 <>Sign Up <CheckCircle2 className="w-5 h-5" /></>
+                            ) : (
+                                'Signups Paused'
                             )}
                         </motion.button>
                     </form>

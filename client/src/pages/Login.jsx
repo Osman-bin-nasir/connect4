@@ -4,7 +4,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { User, Lock, ArrowRight, Home, Eye, EyeOff } from 'lucide-react';
-import API_URL from '../config';
+import API_URL, { PUBLIC_SIGNUP_ENABLED } from '../config';
 
 function Login() {
     const [identifier, setIdentifier] = useState('');
@@ -129,12 +129,18 @@ function Login() {
                     </form>
 
                     <div className="mt-8 pt-6 border-t border-slate-700/50 text-center">
-                        <p className="text-slate-400">
-                            New challenger?{' '}
-                            <Link to="/signup" className="text-white hover:text-slate-300 font-bold transition-colors">
-                                Create an account
-                            </Link>
-                        </p>
+                        {PUBLIC_SIGNUP_ENABLED ? (
+                            <p className="text-slate-400">
+                                New challenger?{' '}
+                                <Link to="/signup" className="text-white hover:text-slate-300 font-bold transition-colors">
+                                    Create an account
+                                </Link>
+                            </p>
+                        ) : (
+                            <p className="text-slate-400 text-sm">
+                                New registrations are temporarily paused while we stop signup abuse.
+                            </p>
+                        )}
                     </div>
                 </div>
             </motion.div>

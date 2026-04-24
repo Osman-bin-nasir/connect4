@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "cleanup:spam-users": "node scripts/cleanup-spam-users.js",
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "purge:users": "node scripts/purge-users.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

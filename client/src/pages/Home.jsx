@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import API_URL from '../config';
+import API_URL, { PUBLIC_SIGNUP_ENABLED, SIGNUP_EMAIL_REQUIRED } from '../config';
 
 import { ArrowRight, CircleChevronRight, Clock, Globe, Heart, RefreshCw, Shield, Trophy, Users } from 'lucide-react';
 
@@ -485,15 +485,23 @@ function Home() {
 
                     {!isLoggedIn && (
                         <div className="mt-6 flex flex-col items-center gap-1">
-                            <p className="text-slate-500">
-                                New here?{' '}
-                                <span onClick={() => navigate('/signup')} className="text-white hover:text-slate-300 font-medium cursor-pointer transition-colors">
-                                    Create an account
-                                </span>
-                            </p>
-                            <p className="text-slate-500/70 text-xs">
-                                (No email required to play)
-                            </p>
+                            {PUBLIC_SIGNUP_ENABLED ? (
+                                <>
+                                    <p className="text-slate-500">
+                                        New here?{' '}
+                                        <span onClick={() => navigate('/signup')} className="text-white hover:text-slate-300 font-medium cursor-pointer transition-colors">
+                                            Create an account
+                                        </span>
+                                    </p>
+                                    <p className="text-slate-500/70 text-xs">
+                                        {SIGNUP_EMAIL_REQUIRED ? '(Email required for new accounts)' : '(No email required to play)'}
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="text-slate-500/80 text-sm">
+                                    New registrations are temporarily paused while we stop signup abuse.
+                                </p>
+                            )}
                         </div>
                     )}
                 </motion.div>
@@ -516,7 +524,7 @@ function Home() {
                                     <p className="text-slate-500 mt-3 max-w-2xl">
                                         {activeTab === 'open1v1'
                                             ? 'Only live public 1v1 games with an active host appear here, and they expire fast if nobody joins.'
-                                            : 'Recent public player games that already finished. For instant play, jump into an AI game from your dashboard.'}
+                                            : 'Recent public 1v1 and AI games that already finished. For instant play, jump into an AI game from your dashboard.'}
                                     </p>
                                 </div>
 

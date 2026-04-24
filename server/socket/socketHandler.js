@@ -2,6 +2,7 @@ const Game = require('../models/Game');
 const { checkWin, checkDraw, makeMove } = require('../utils/gameLogic');
 const { getBestMove } = require('../utils/aiPlayer');
 const { clearSocketPresence, markHostPresent } = require('./lobbyPresence');
+const { jwtSecret } = require('../config/security');
 
 // In-memory storage
 const gameVotes = {}; // { gameId: { col0: 5, col1: 2 } }
@@ -65,7 +66,7 @@ module.exports = (io) => {
     io.use((socket, next) => {
         const token = socket.handshake.auth.token;
         if (token) {
-            jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_do_not_use_in_prod', (err, decoded) => {
+            jwt.verify(token, jwtSecret, (err, decoded) => {
                 if (err) return next(new Error('Authentication error'));
                 socket.user = decoded;
                 next();
