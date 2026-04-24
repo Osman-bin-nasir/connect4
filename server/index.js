@@ -5,6 +5,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+const { ensureCriticalSecurityConfig } = require('./config/security');
+
+ensureCriticalSecurityConfig();
 
 // Global Rate Limiter
 const limiter = rateLimit({

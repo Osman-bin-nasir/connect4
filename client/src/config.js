@@ -9,4 +9,15 @@ if (API_URL && API_URL.endsWith('/')) {
     API_URL = API_URL.slice(0, -1);
 }
 
+const publicSignupEnv = import.meta.env.VITE_PUBLIC_SIGNUP_ENABLED;
+const signupEmailRequiredEnv = import.meta.env.VITE_SIGNUP_EMAIL_REQUIRED;
+
+export const PUBLIC_SIGNUP_ENABLED = publicSignupEnv
+    ? publicSignupEnv === 'true'
+    : true;
+
+export const SIGNUP_EMAIL_REQUIRED = signupEmailRequiredEnv
+    ? signupEmailRequiredEnv === 'true'
+    : !import.meta.env.DEV;
+
 export default API_URL;
