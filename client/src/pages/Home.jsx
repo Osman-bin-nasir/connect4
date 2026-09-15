@@ -320,7 +320,7 @@ function Home() {
 
                         <span className="flex items-center gap-1.5 text-slate-300 font-medium bg-slate-500/10 px-2.5 py-1 rounded-full">
                             <Users className="w-3.5 h-3.5" />
-                            {game.gameMode === '1v1' ? '1v1' : game.gameMode === 'ai' ? 'vAI' : 'Crowd'}
+                            {game.gameMode === '1v1' ? '1v1' : game.gameMode === 'rival' ? 'Human-Trained AI' : game.gameMode === 'ai' ? 'vAI' : 'Crowd'}
                         </span>
                     </div>
 
@@ -524,7 +524,7 @@ function Home() {
                                     <p className="text-slate-500 mt-3 max-w-2xl">
                                         {activeTab === 'open1v1'
                                             ? 'Only live public 1v1 games with an active host appear here, and they expire fast if nobody joins.'
-                                            : 'Recent public 1v1 and AI games that already finished. For instant play, jump into an AI game from your dashboard.'}
+                                            : 'Recent public 1v1, AI, and Human-Trained AI games that already finished. For instant play, start a new game from your dashboard.'}
                                     </p>
                                 </div>
 

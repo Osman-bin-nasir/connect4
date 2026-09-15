@@ -177,7 +177,7 @@ function GamePage() {
                 } else {
                     userRole = 'spectator'; // Watching a 1v1 game (player2 already exists)
                 }
-            } else if (loadedGame.gameMode === 'ai') {
+            } else if (loadedGame.gameMode === 'ai' || loadedGame.gameMode === 'rival') {
                 // Only the game owner can play in AI mode
                 if (spIdString && spIdString === uId) {
                     userRole = 'player';
@@ -240,7 +240,7 @@ function GamePage() {
             } else if (role === 'player2' && game.currentTurn === 'player2') {
                 socket.emit('make_move', { gameId: game._id, col });
             }
-        } else if (gameMode === 'ai') {
+        } else if (gameMode === 'ai' || gameMode === 'rival') {
             if (role === 'player' && game.currentTurn === 'player') {
                 socket.emit('make_move', { gameId: game._id, col });
             }
@@ -462,8 +462,8 @@ function GamePage() {
     } else if (gameMode === '1v1') {
         const p2Id = game.player2Id;
         player2Name = (p2Id && typeof p2Id === 'object') ? p2Id.username : (game.status === 'waiting' ? 'Open Slot' : 'Player 2');
-    } else if (gameMode === 'ai') {
-        player2Name = 'AI';
+    } else if (gameMode === 'ai' || gameMode === 'rival') {
+        player2Name = gameMode === 'rival' ? 'Human-Trained AI' : 'AI';
     }
 
     const isWaitingForOpponent = gameMode === '1v1' && game.status === 'waiting' && !game.player2Id;
@@ -473,10 +473,10 @@ function GamePage() {
             ? '#38bdf8'
             : (game.currentTurn === 'player' ? '#f43f5e' : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? '#eab308' : '#818cf8');
     const statusHeading = game.status === 'completed'
-        ? `Winner: ${game.winner === 'player' ? player1Name : game.winner === 'player2' || game.winner === 'crowd' ? player2Name : game.winner === 'ai' ? 'AI' : 'Draw'}`
+        ? `Winner: ${game.winner === 'player' ? player1Name : game.winner === 'player2' || game.winner === 'crowd' || game.winner === 'ai' ? player2Name : 'Draw'}`
         : isWaitingForOpponent
             ? 'Waiting for Player 2'
-            : `${game.currentTurn === 'player' ? player1Name : game.currentTurn === 'player2' || game.currentTurn === 'crowd' ? player2Name : 'AI'}'s Turn`;
+            : `${game.currentTurn === 'player' ? player1Name : player2Name}'s Turn`;
     const waitingStatusMessage = game.isPublic !== false
         ? 'This public 1v1 lobby is listed in Open 1v1 on the home page.'
         : 'This private 1v1 game can only be joined with this invite link.';
@@ -560,7 +560,7 @@ function GamePage() {
                             <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-full bg-yellow-500 shrink-0"></div>
                             <div className="flex flex-col w-full min-w-0">
                                 <span className="text-[9px] sm:text-[10px] uppercase font-bold text-gray-500 tracking-wider truncate">
-                                    {gameMode === 'ai' ? 'AI' : gameMode === '1v1' ? 'Player 2' : 'The Crowd'}
+                                    {gameMode === 'ai' ? 'AI' : gameMode === 'rival' ? 'Human-Trained AI' : gameMode === '1v1' ? 'Player 2' : 'The Crowd'}
                                 </span>
 
                                 {isEditingCrowdName && gameMode === 'crowd' ? (

@@ -5,6 +5,8 @@ const User = require('../models/User');
 const Heart = require('../models/Heart');
 const authenticateToken = require('../middleware/auth');
 const { isHostPresent } = require('../socket/lobbyPresence');
+const fs = require('fs');
+const { MODEL_PATH } = require('../ml/humanMoves');
 
 const OPEN_1V1_LOBBY_MAX_AGE_MS = 5 * 60 * 1000;
 
@@ -12,6 +14,12 @@ const OPEN_1V1_LOBBY_MAX_AGE_MS = 5 * 60 * 1000;
 router.post('/', authenticateToken, async (req, res) => {
     try {
         const { turnDuration, name, isPublic, crowdName, gameMode, aiDifficulty } = req.body;
+        if (!['crowd', '1v1', 'ai', 'rival'].includes(gameMode || 'crowd')) {
+            return res.status(400).json({ error: 'Invalid game mode' });
+        }
+        if (gameMode === 'rival' && !fs.existsSync(MODEL_PATH)) {
+            return res.status(503).json({ error: 'Human-Trained AI is unavailable until its model is trained' });
+        }
         const userId = req.user.userId;
 
         // fallback to 30 only if undefined, allowing 0
@@ -83,13 +91,13 @@ router.get('/leaderboard', async (req, res) => {
     }
 });
 
-// Get latest completed public 1v1 and AI games - Public
+// Get latest completed public 1v1 and computer-opponent games - Public
 router.get('/completed/recent', async (req, res) => {
     try {
         const recentCompleted = await Game.find({
             isPublic: true,
             status: 'completed',
-            gameMode: { $in: ['1v1', 'ai'] }
+            gameMode: { $in: ['1v1', 'ai', 'rival'] }
         })
             .sort({ updatedAt: -1, createdAt: -1 })
             .limit(60)

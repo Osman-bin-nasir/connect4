@@ -1,6 +1,7 @@
 const Game = require('../models/Game');
 const { checkWin, checkDraw, makeMove } = require('../utils/gameLogic');
 const { getBestMove } = require('../utils/aiPlayer');
+const { getHumanMove } = require('../ml/humanMoves');
 const { clearSocketPresence, markHostPresent } = require('./lobbyPresence');
 const { jwtSecret } = require('../config/security');
 
@@ -176,7 +177,7 @@ module.exports = (io) => {
                     } else {
                         return; // Not this player's turn
                     }
-                } else if (game.gameMode === 'ai') {
+                } else if (game.gameMode === 'ai' || game.gameMode === 'rival') {
                     // AI mode logic
                     if (game.currentTurn !== 'player') return;
                     if (game.singlePlayerId._id.toString() !== socket.user.userId) return;
@@ -218,7 +219,7 @@ module.exports = (io) => {
                     io.to(gameId).emit('game_state', savedGame);
 
                     // Trigger AI move if AI's turn
-                    if (game.gameMode === 'ai' && nextTurn === 'ai' && game.status === 'active') {
+                    if ((game.gameMode === 'ai' || game.gameMode === 'rival') && nextTurn === 'ai' && game.status === 'active') {
                         handleAIMove(io, gameId);
                     }
                 }
@@ -534,7 +535,9 @@ async function handleAIMove(io, gameId) {
         if (!game || game.status !== 'active' || game.currentTurn !== 'ai') return;
 
         // Get AI's best move
-        const aiCol = getBestMove(game.board, game.aiDifficulty);
+        const aiCol = game.gameMode === 'rival'
+            ? getHumanMove(game.board, game.moves.at(-1)?.col ?? null)
+            : getBestMove(game.board, game.aiDifficulty);
 
         if (aiCol === null) return; // No valid moves
 

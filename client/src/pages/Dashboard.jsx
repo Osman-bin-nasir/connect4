@@ -195,8 +195,8 @@ function Dashboard() {
                 return game.player2Id?.username || (game.status === 'waiting' ? 'Open Slot' : 'Player 2');
             }
 
-            if (game.gameMode === 'ai') {
-                return 'AI';
+            if (game.gameMode === 'ai' || game.gameMode === 'rival') {
+                return game.gameMode === 'rival' ? 'Human-Trained AI' : 'AI';
             }
 
             return game.crowdName || 'The Crowd';
@@ -207,7 +207,7 @@ function Dashboard() {
         }
 
         if (slot === 'ai') {
-            return 'AI';
+            return game.gameMode === 'rival' ? 'Human-Trained AI' : 'AI';
         }
 
         return 'Unknown';
@@ -392,6 +392,12 @@ function Dashboard() {
                                                     <span>Medium</span>
                                                     <span>Hard</span>
                                                 </div>
+                                            </div>
+                                        )}
+                                        {gameMode === 'rival' && (
+                                            <div className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-slate-300">
+                                                <span className="block font-bold text-white mb-1">Human difficulty</span>
+                                                This opponent makes varied choices learned from real players’ games.
                                             </div>
                                         )}
                                     </div>
@@ -637,13 +643,13 @@ function Dashboard() {
                                                         </h3>
                                                         <div className="flex flex-col gap-2 items-end shrink-0">
                                                             {/* Game Mode Badge */}
-                                                            <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${game.gameMode === 'ai'
+                                                            <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${game.gameMode === 'ai' || game.gameMode === 'rival'
                                                                 ? 'bg-slate-500/10 text-slate-300 border-slate-500/20'
                                                                 : game.gameMode === '1v1'
                                                                     ? 'bg-slate-500/10 text-slate-300 border-slate-500/20'
                                                                     : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                                                                 }`}>
-                                                                {game.gameMode === 'ai' ? 'AI' : game.gameMode === '1v1' ? '1v1' : 'Crowd'}
+                                                                {game.gameMode === 'rival' ? 'Human-Trained AI' : game.gameMode === 'ai' ? 'AI' : game.gameMode === '1v1' ? '1v1' : 'Crowd'}
                                                             </span>
                                                             <span className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${isOwner
                                                                 ? 'bg-sky-500/10 text-sky-300 border-sky-500/20'

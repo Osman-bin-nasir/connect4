@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const gameSchema = new mongoose.Schema({
     name: { type: String, default: 'Untitled Game' },
     status: { type: String, enum: ['waiting', 'active', 'completed'], default: 'waiting' },
-    gameMode: { type: String, enum: ['crowd', '1v1', 'ai'], default: 'crowd' }, // Game type
+    gameMode: { type: String, enum: ['crowd', '1v1', 'ai', 'rival'], default: 'crowd' }, // Game type
     singlePlayerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     player2Id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // For 1v1 mode
     crowdId: { type: String, default: 'crowd' },

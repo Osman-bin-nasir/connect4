@@ -28,10 +28,17 @@ function GameModeSelector({ selectedMode, onModeChange }) {
             icon: Bot,
             description: 'Test your skills against the computer.',
             color: 'blue'
+        },
+        {
+            id: 'rival',
+            title: 'vs Human-Trained AI',
+            icon: UserCircle2,
+            description: 'An AI trained on moves from real players’ games.',
+            color: 'blue'
         }
     ];
 
-    const getColorClasses = (color, isSelected) => {
+    const getColorClasses = (color) => {
         const colorMap = {
             yellow: {
                 selected: 'bg-yellow-500/15 border-yellow-500/60 shadow-[0_0_20px_rgba(234,179,8,0.2)]',
@@ -55,10 +62,10 @@ function GameModeSelector({ selectedMode, onModeChange }) {
             <label className="block text-sm font-semibold text-gray-400 mb-3">
                 Game Mode
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {modes.map((mode) => {
                     const isSelected = selectedMode === mode.id;
-                    const colors = getColorClasses(mode.color, isSelected);
+                    const colors = getColorClasses(mode.color);
                     const Icon = mode.icon;
 
                     return (
